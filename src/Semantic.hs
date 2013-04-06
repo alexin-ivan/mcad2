@@ -41,7 +41,7 @@ data Bit = H | L | X | Z
     deriving(Eq,Ord,Show,Read,Enum)
 
 instance ASTShow Bit where
-    ast_show b = "1b'" ++ (c b)
+    ast_show b = "1'b" ++ (c b)
         where
         c H = "1"
         c L = "0"

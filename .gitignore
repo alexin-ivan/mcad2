@@ -8,4 +8,4 @@ cabal-dev
 *.*~
 *.swp
 Makefile~
-tags
+*tags

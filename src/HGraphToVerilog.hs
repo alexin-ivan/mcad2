@@ -120,12 +120,15 @@ instance ToVerilog EdgeMap where
     to_verilog = unlines . (map go) . Map.keys
         where
         go :: [S3.Wire] -> String
-        go wire = printf "%s %s ;" wtype wid 
+        go wire = case wid of
+               Just wid' -> printf "%s %s ;" wtype wid'
+               Nothing  -> ""
             where
             main_wire = last wire
             wid = case S3.wire_arg main_wire of
-                (S3.SValue ax) -> to_verilog $ conv_arg ax
-                (S3.CValue b ) -> to_verilog $ Constant [b]
+                (S3.SValue ax) -> Just $ to_verilog $ conv_arg ax
+                _              -> Nothing
+--                (S3.CValue b ) -> to_verilog $ Constant [b]
             wtype = to_verilog $ S3.wire_type main_wire
             {-conv_arg (S3.Arg _ lid) = S3.Arg [] lid-}
             conv_arg = id
