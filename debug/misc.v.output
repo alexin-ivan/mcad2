@@ -4,10 +4,10 @@ input \d1  ;
 output \q  ;
 input \sel  ;
 
-wire 1'b1 ;
-wire 1'b0 ;
-wire 1'bx ;
-wire 1'bz ;
+
+
+
+
 
 assign \q = \sel ? \d1 : \d0 ;
 

@@ -20,10 +20,10 @@ input \s[1]  ;
 input \s[2]  ;
 input \s[3]  ;
 
-wire 1'b1 ;
-wire 1'b0 ;
-wire 1'bx ;
-wire 1'bz ;
+
+
+
+
 
 
 endmodule

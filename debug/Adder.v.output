@@ -3,10 +3,10 @@ input \a  ;
 input \b  ;
 output \q  ;
 
-wire 1'b1 ;
-wire 1'b0 ;
-wire 1'bx ;
-wire 1'bz ;
+
+
+
+
 
 
 endmodule
@@ -17,10 +17,10 @@ input \b  ;
 output \c  ;
 output \s  ;
 
-wire 1'b1 ;
-wire 1'b0 ;
-wire 1'bx ;
-wire 1'bz ;
+
+
+
+
 
 and2 \a1 (.\a (\a ),.\b (\b ),.\q (\c ));
 

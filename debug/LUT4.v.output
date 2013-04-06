@@ -37,10 +37,10 @@ tri \LUT4#t2[3] ;
 tri \LUT4#t2[4] ;
 tri \LUT4#t3[0] ;
 tri \LUT4#t3[1] ;
-wire 1'b1 ;
-wire 1'b0 ;
-wire 1'bx ;
-wire 1'bz ;
+
+
+
+
 
 assign \LUT4#t1[0] = \i[0] ? \SRAM[0] : \SRAM[1] ;
 assign \LUT4#t1[1] = \i[0] ? \SRAM[2] : \SRAM[3] ;
