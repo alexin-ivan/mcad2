@@ -5,5 +5,7 @@ cabal-dev
 *.chi
 *.chs.h
 .virthualenv
-
 *.*~
+*.swp
+Makefile~
+tags

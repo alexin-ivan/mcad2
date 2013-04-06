@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1251">
+<title>P:\git\mcad\mcad2\src\HGraphSemantic.hs.html</title>
+<meta name="Generator" content="Vim/7.3">
+<meta name="plugin-version" content="vim7.3_v6">
+<meta name="syntax" content="haskell">
+<meta name="settings" content="dynamic_folds,use_css,number_lines">
+<style type="text/css">
+<!--
+pre { font-family: monospace; color: #ffffff; background-color: #333333; }
+body { font-family: monospace; color: #ffffff; background-color: #333333; }
+.lnr { color: #ffff00; }
+.FoldColumn { text-decoration: none; white-space: pre; }
+.open-fold   .Folded      { display: none; }
+.open-fold   .fulltext      { display: inline; }
+.open-fold   .toggle-open   { display: none; }
+.closed-fold .toggle-closed { display: inline; }
+
+.closed-fold .fulltext      { display: none; }
+.closed-fold .Folded      { display: inline; }
+.closed-fold .toggle-open   { display: inline; }
+.closed-fold .toggle-closed { display: none; }
+.Identifier { color: #98fb98; }
+.Statement { color: #f0e68c; font-weight: bold; }
+.PreProc { color: #cd5c5c; }
+.Normal { color: #ffffff; background-color: #333333; }
+.Type { color: #bdb76b; font-weight: bold; }
+.Comment { color: #87ceeb; }
+.Special { color: #ffdead; }
+.FoldColumn { color: #d2b48c; background-color: #4d4d4d; }
+-->
+</style>
+
+<script type='text/javascript'>
+<!--
+function toggleFold(objID)
+{
+  var fold;
+  fold = document.getElementById(objID);
+  if(fold.className == 'closed-fold')
+  {
+    fold.className = 'open-fold';
+  }
+  else if (fold.className == 'open-fold')
+  {
+    fold.className = 'closed-fold';
+  }
+}
+-->
+</script>
+</head>
+<body>
+<pre>
+<span class="FoldColumn">  </span><span class="lnr">  1 </span><span class="Special">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="FoldColumn">  </span><span class="lnr">  2 </span><span class="Special">{-# LANGUAGE TypeSynonymInstances #-}</span>
+<span class="FoldColumn">  </span><span class="lnr">  3 </span><span class="Special">{-# LANGUAGE FunctionalDependencies #-}</span>
+<span class="FoldColumn">  </span><span class="lnr">  4 </span><span class="Special">{-# LANGUAGE TypeFamilies #-}</span>
+<span class="FoldColumn">  </span><span class="lnr">  5 </span><span class="Special">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="FoldColumn">  </span><span class="lnr">  6 </span><span class="Special">{-# LANGUAGE DeriveFunctor #-}</span>
+<span class="FoldColumn">  </span><span class="lnr">  7 </span><span class="Comment">--</span>
+<span class="FoldColumn">  </span><span class="lnr">  8 </span><span class="Comment">-- Author: Ivan</span>
+<span class="FoldColumn">  </span><span class="lnr">  9 </span><span class="Comment">-- File: HGraphSemantic.hs</span>
+<span class="FoldColumn">  </span><span class="lnr"> 10 </span><span class="Comment">-- Data: 2013-04-03</span>
+<span class="FoldColumn">  </span><span class="lnr"> 11 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 12 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 13 </span><span class="Type">module</span> <span class="Normal">HGraphSemantic</span> <span class="Type">where</span>
+<span class="FoldColumn">  </span><span class="lnr"> 14 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 15 </span><span class="PreProc">import</span> <span class="Normal">Semantic3</span>
+<span class="FoldColumn">  </span><span class="lnr"> 16 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 17 </span><span class="PreProc">import</span> <span class="PreProc">qualified</span> <span class="Normal">Semantic</span> <span class="PreProc">as</span> <span class="Normal">S</span>
+<span class="FoldColumn">  </span><span class="lnr"> 18 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 19 </span><span class="PreProc">import</span> <span class="PreProc">qualified</span> <span class="Normal">AST</span> <span class="PreProc">as</span> <span class="Normal">AST</span>
+<span class="FoldColumn">  </span><span class="lnr"> 20 </span><span class="PreProc">import</span> <span class="Normal">AST</span>(<span class="Type">Direction</span><span class="Type">(..)</span>)
+<span class="FoldColumn">  </span><span class="lnr"> 21 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 22 </span><span class="PreProc">import</span> <span class="Normal">Data.Map</span>(<span class="Type">Map</span>)
+<span class="FoldColumn">  </span><span class="lnr"> 23 </span><span class="PreProc">import</span> <span class="PreProc">qualified</span> <span class="Normal">Data.Map</span> <span class="PreProc">as</span> <span class="Normal">Map</span>
+<span class="FoldColumn">  </span><span class="lnr"> 24 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 25 </span><span class="PreProc">import</span> <span class="Normal">Data.Set</span>(<span class="Type">Set</span>)
+<span class="FoldColumn">  </span><span class="lnr"> 26 </span><span class="PreProc">import</span> <span class="PreProc">qualified</span> <span class="Normal">Data.Set</span> <span class="PreProc">as</span> <span class="Normal">Set</span>
+<span class="FoldColumn">  </span><span class="lnr"> 27 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 28 </span><span class="PreProc">import</span> <span class="PreProc">qualified</span> <span class="Normal">Data.List</span> <span class="PreProc">as</span> <span class="Normal">List</span>
+<span class="FoldColumn">  </span><span class="lnr"> 29 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 30 </span><span class="PreProc">import</span> <span class="Normal">Data.Tree</span>(<span class="Type">Tree</span>)
+<span class="FoldColumn">  </span><span class="lnr"> 31 </span><span class="PreProc">import</span> <span class="PreProc">qualified</span> <span class="Normal">Data.Tree</span> <span class="PreProc">as</span> <span class="Normal">Tree</span>
+<span class="FoldColumn">  </span><span class="lnr"> 32 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 33 </span><span class="PreProc">import</span> <span class="Normal">Control.Applicative</span>
+<span class="FoldColumn">  </span><span class="lnr"> 34 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 35 </span><span class="Type">type</span> <span class="Type">EdgeLabel</span> <span class="Statement">=</span> <span class="Type">Wire</span>
+<span class="FoldColumn">  </span><span class="lnr"> 36 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 37 </span><span class="Type">type</span> <span class="Type">EdgeMap</span> <span class="Statement">=</span> <span class="Type">Map</span> <span class="Type">EdgeLabel</span> [<span class="Type">Port</span>]
+<span class="FoldColumn">  </span><span class="lnr"> 38 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 39 </span><span class="Type">data</span> <span class="Type">Node</span> <span class="Statement">=</span> <span class="Type">Node</span>
+<span class="FoldColumn">  </span><span class="lnr"> 40 </span>    {   node_id    <span class="Statement">::</span> <span class="Type">ModuleID</span>
+<span class="FoldColumn">  </span><span class="lnr"> 41 </span>    ,   node_type  <span class="Statement">::</span> <span class="Type">S</span><span class="Statement">.</span><span class="Type">ModuleType</span>
+<span class="FoldColumn">  </span><span class="lnr"> 42 </span>    ,   node_props <span class="Statement">::</span> <span class="Type">NodeProps</span>
+<span class="FoldColumn">  </span><span class="lnr"> 43 </span>    ,   node_flist <span class="Statement">::</span> <span class="Type">Map</span> <span class="Type">EdgeLabel</span> <span class="Type">Port</span>
+<span class="FoldColumn">  </span><span class="lnr"> 44 </span>    }
+<span class="FoldColumn">  </span><span class="lnr"> 45 </span>    <span class="Type">deriving</span>(<span class="Type">Eq</span>,<span class="Type">Ord</span>,<span class="Type">Show</span>,<span class="Type">Read</span>)
+<span class="FoldColumn">  </span><span class="lnr"> 46 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 47 </span><span class="Type">type</span> <span class="Type">NodeProps</span> <span class="Statement">=</span> <span class="Type">S</span><span class="Statement">.</span><span class="Type">LocalParameters</span>
+<span class="FoldColumn">  </span><span class="lnr"> 48 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 49 </span><span class="Type">data</span> <span class="Type">Graph</span> <span class="Statement">=</span> <span class="Type">Graph</span>
+<span class="FoldColumn">  </span><span class="lnr"> 50 </span>    {   graph_edges <span class="Statement">::</span> <span class="Type">EdgeMap</span>
+<span class="FoldColumn">  </span><span class="lnr"> 51 </span>    ,   graph_nodes <span class="Statement">::</span> [<span class="Type">Node</span>]
+<span class="FoldColumn">  </span><span class="lnr"> 52 </span>    }
+<span class="FoldColumn">  </span><span class="lnr"> 53 </span>    <span class="Type">deriving</span>(<span class="Type">Eq</span>,<span class="Type">Ord</span>,<span class="Type">Show</span>,<span class="Type">Read</span>)
+<span class="FoldColumn">  </span><span class="lnr"> 54 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 55 </span><span class="Identifier">build_top</span> :: a
+<span class="FoldColumn">  </span><span class="lnr"> 56 </span><span class="Identifier">build_top</span> <span class="Statement">=</span> undefined
+<span class="FoldColumn">  </span><span class="lnr"> 57 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 58 </span><span class="Comment">{-</span>
+<span class="FoldColumn">  </span><span class="lnr"> 59 </span><span class="Comment">data PortID = PortID {</span>
+<span class="FoldColumn">  </span><span class="lnr"> 60 </span><span class="Comment">    portid_name :: String,</span>
+<span class="FoldColumn">  </span><span class="lnr"> 61 </span><span class="Comment">    portid_index :: Int }</span>
+<span class="FoldColumn">  </span><span class="lnr"> 62 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr"> 63 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 64 </span><span class="Comment">type NodeID = [S.InstanceName]</span>
+<span class="FoldColumn">  </span><span class="lnr"> 65 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 66 </span><span class="Comment">data EdgeID = EdgeID {</span>
+<span class="FoldColumn">  </span><span class="lnr"> 67 </span><span class="Comment">    edgeid_nodeid:: NodeID,</span>
+<span class="FoldColumn">  </span><span class="lnr"> 68 </span><span class="Comment">    edgeid_arg :: S.Arg }</span>
+<span class="FoldColumn">  </span><span class="lnr"> 69 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr"> 70 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 71 </span><span class="Comment">data Port = Port </span>
+<span class="FoldColumn">  </span><span class="lnr"> 72 </span><span class="Comment">    {   port_id :: PortID</span>
+<span class="FoldColumn">  </span><span class="lnr"> 73 </span><span class="Comment">    ,   port_dir :: Direction</span>
+<span class="FoldColumn">  </span><span class="lnr"> 74 </span><span class="Comment">    }</span>
+<span class="FoldColumn">  </span><span class="lnr"> 75 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr"> 76 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 77 </span><span class="Comment">data CP = CP {</span>
+<span class="FoldColumn">  </span><span class="lnr"> 78 </span><span class="Comment">    cp_node :: Node ,</span>
+<span class="FoldColumn">  </span><span class="lnr"> 79 </span><span class="Comment">    cp_port :: Port }</span>
+<span class="FoldColumn">  </span><span class="lnr"> 80 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr"> 81 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 82 </span><span class="Comment">data Edge = Edge { edge_cps :: [CP] }</span>
+<span class="FoldColumn">  </span><span class="lnr"> 83 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr"> 84 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 85 </span><span class="Comment">data Node</span>
+<span class="FoldColumn">  </span><span class="lnr"> 86 </span><span class="Comment">    = Node </span>
+<span class="FoldColumn">  </span><span class="lnr"> 87 </span><span class="Comment">        {   node_id :: NodeID</span>
+<span class="FoldColumn">  </span><span class="lnr"> 88 </span><span class="Comment">        ,   node_property :: NodeProperty </span>
+<span class="FoldColumn">  </span><span class="lnr"> 89 </span><span class="Comment">        }</span>
+<span class="FoldColumn">  </span><span class="lnr"> 90 </span><span class="Comment">    | UniverseNode</span>
+<span class="FoldColumn">  </span><span class="lnr"> 91 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr"> 92 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 93 </span><span class="Comment">type NodeProperty = Map String [S.Bit]</span>
+<span class="FoldColumn">  </span><span class="lnr"> 94 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 95 </span><span class="Comment">type EdgeMap = Map EdgeID Edge</span>
+<span class="FoldColumn">  </span><span class="lnr"> 96 </span>
+<span class="FoldColumn">  </span><span class="lnr"> 97 </span><span class="Comment">data Graph = </span>
+<span class="FoldColumn">  </span><span class="lnr"> 98 </span><span class="Comment">    Graph</span>
+<span class="FoldColumn">  </span><span class="lnr"> 99 </span><span class="Comment">    { graph_public_edges  :: EdgeMap</span>
+<span class="FoldColumn">  </span><span class="lnr">100 </span><span class="Comment">    , graph_private_edges :: EdgeMap</span>
+<span class="FoldColumn">  </span><span class="lnr">101 </span><span class="Comment">    , graph_nodes :: [Node]</span>
+<span class="FoldColumn">  </span><span class="lnr">102 </span><span class="Comment">    } </span>
+<span class="FoldColumn">  </span><span class="lnr">103 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">104 </span>
+<span class="FoldColumn">  </span><span class="lnr">105 </span><span class="Comment">empty_graph ::  Graph</span>
+<span class="FoldColumn">  </span><span class="lnr">106 </span><span class="Comment">empty_graph = Graph (Map.empty) (Map.empty) []</span>
+<span class="FoldColumn">  </span><span class="lnr">107 </span>
+<span class="FoldColumn">  </span><span class="lnr">108 </span><span class="Comment">empty_edge ::  Edge</span>
+<span class="FoldColumn">  </span><span class="lnr">109 </span><span class="Comment">empty_edge = Edge []</span>
+<span class="FoldColumn">  </span><span class="lnr">110 </span>
+<span class="FoldColumn">  </span><span class="lnr">111 </span><span class="Comment">cant_find_error ::  (Show c, Show k) =&gt; k -&gt; c -&gt; String</span>
+<span class="FoldColumn">  </span><span class="lnr">112 </span><span class="Comment">cant_find_error k container = </span>
+<span class="FoldColumn">  </span><span class="lnr">113 </span><span class="Comment">    &quot;Can't find value &quot; ++ (show k) ++</span>
+<span class="FoldColumn">  </span><span class="lnr">114 </span><span class="Comment">    &quot;in &quot; ++ (show container)</span>
+<span class="FoldColumn">  </span><span class="lnr">115 </span>
+<span class="FoldColumn">  </span><span class="lnr">116 </span><span class="Comment">lookupEdge graph eid = </span>
+<span class="FoldColumn">  </span><span class="lnr">117 </span><span class="Comment">    case Map.lookup eid ports of</span>
+<span class="FoldColumn">  </span><span class="lnr">118 </span><span class="Comment">        Just x -&gt; Right x</span>
+<span class="FoldColumn">  </span><span class="lnr">119 </span><span class="Comment">        Nothing -&gt; case Map.lookup eid wires of</span>
+<span class="FoldColumn">  </span><span class="lnr">120 </span><span class="Comment">            Just x -&gt; Right x</span>
+<span class="FoldColumn">  </span><span class="lnr">121 </span><span class="Comment">            Nothing -&gt; Left $ cant_find_error eid graph</span>
+<span class="FoldColumn">  </span><span class="lnr">122 </span><span class="Comment">    where</span>
+<span class="FoldColumn">  </span><span class="lnr">123 </span><span class="Comment">    ports = graph_public_edges graph</span>
+<span class="FoldColumn">  </span><span class="lnr">124 </span><span class="Comment">    wires = graph_private_edges graph</span>
+<span class="FoldColumn">  </span><span class="lnr">125 </span>
+<span class="FoldColumn">  </span><span class="lnr">126 </span>
+<span class="FoldColumn">  </span><span class="lnr">127 </span><span class="Comment">build_top (S.Module t pd wd lp name flist) =  undefined</span>
+<span class="FoldColumn">  </span><span class="lnr">128 </span><span class="Comment">    where</span>
+<span class="FoldColumn">  </span><span class="lnr">129 </span><span class="Comment">    open_edges = map (\x -&gt; (x,empty_edge) ) flist</span>
+<span class="FoldColumn">  </span><span class="lnr">130 </span>
+<span class="FoldColumn">  </span><span class="lnr">131 </span>
+<span class="FoldColumn">  </span><span class="lnr">132 </span><span class="Comment">-}</span>
+<span class="FoldColumn">  </span><span class="lnr">133 </span>
+<span class="FoldColumn">  </span><span class="lnr">134 </span><span class="Comment">{-</span>
+<span class="FoldColumn">  </span><span class="lnr">135 </span><span class="Comment">class (Ord eid) =&gt; EdgeMapC c eid nid | c -&gt; eid, c -&gt; nid where</span>
+<span class="FoldColumn">  </span><span class="lnr">136 </span><span class="Comment">    lookupEdge :: eid -&gt; c -&gt; Maybe (Edge nid)</span>
+<span class="FoldColumn">  </span><span class="lnr">137 </span><span class="Comment">    unionEdgeMap :: c -&gt; c -&gt; c</span>
+<span class="FoldColumn">  </span><span class="lnr">138 </span>
+<span class="FoldColumn">  </span><span class="lnr">139 </span><span class="Comment">instance (Ord eid) =&gt; EdgeMapC (EdgeMap eid nid) eid nid where</span>
+<span class="FoldColumn">  </span><span class="lnr">140 </span><span class="Comment">    lookupEdge = Map.lookup</span>
+<span class="FoldColumn">  </span><span class="lnr">141 </span><span class="Comment">    unionEdgeMap = Map.union</span>
+<span class="FoldColumn">  </span><span class="lnr">142 </span>
+<span class="FoldColumn">  </span><span class="lnr">143 </span><span class="Comment">instance (Ord eid, Eq nid) =&gt; EdgeMapC [(eid,Edge nid)] eid nid where</span>
+<span class="FoldColumn">  </span><span class="lnr">144 </span><span class="Comment">    lookupEdge = lookup</span>
+<span class="FoldColumn">  </span><span class="lnr">145 </span><span class="Comment">    unionEdgeMap = List.union</span>
+<span class="FoldColumn">  </span><span class="lnr">146 </span>
+<span class="FoldColumn">  </span><span class="lnr">147 </span><span class="Comment">class (EdgeMapC c eid nid) =&gt; HGraphClass g c eid nid where</span>
+<span class="FoldColumn">  </span><span class="lnr">148 </span><span class="Comment">    hg_public_edges :: g -&gt; c</span>
+<span class="FoldColumn">  </span><span class="lnr">149 </span><span class="Comment">    hg_private_edges :: g -&gt; c</span>
+<span class="FoldColumn">  </span><span class="lnr">150 </span><span class="Comment">    hg_nodes :: g -&gt; [Node nid]</span>
+<span class="FoldColumn">  </span><span class="lnr">151 </span>
+<span class="FoldColumn">  </span><span class="lnr">152 </span><span class="Comment">instance (Ord eid) =&gt; HGraphClass (Graph eid nid) (EdgeMap eid nid) eid nid where</span>
+<span class="FoldColumn">  </span><span class="lnr">153 </span><span class="Comment">    hg_public_edges = graph_public_edges</span>
+<span class="FoldColumn">  </span><span class="lnr">154 </span><span class="Comment">    hg_private_edges = graph_private_edges</span>
+<span class="FoldColumn">  </span><span class="lnr">155 </span><span class="Comment">    hg_nodes = graph_nodes</span>
+<span class="FoldColumn">  </span><span class="lnr">156 </span><span class="Comment">-}</span>
+<span class="FoldColumn">  </span><span class="lnr">157 </span>
+<span class="FoldColumn">  </span><span class="lnr">158 </span>
+<span class="FoldColumn">  </span><span class="lnr">159 </span>
+<span class="FoldColumn">  </span><span class="lnr">160 </span>
+<span class="FoldColumn">  </span><span class="lnr">161 </span>
+<span class="FoldColumn">  </span><span class="lnr">162 </span><span class="Comment">{-</span>
+<span class="FoldColumn">  </span><span class="lnr">163 </span><span class="Comment">data GraphT eid nid pid = </span>
+<span class="FoldColumn">  </span><span class="lnr">164 </span><span class="Comment">    Graph {</span>
+<span class="FoldColumn">  </span><span class="lnr">165 </span><span class="Comment">    graph_publicEdges  :: [Edge nid pid],</span>
+<span class="FoldColumn">  </span><span class="lnr">166 </span><span class="Comment">    graph_privateEdges :: (EdgeMap eid nid pid),</span>
+<span class="FoldColumn">  </span><span class="lnr">167 </span><span class="Comment">    graph_nodes        :: [Node nid] }</span>
+<span class="FoldColumn">  </span><span class="lnr">168 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">169 </span>
+<span class="FoldColumn">  </span><span class="lnr">170 </span><span class="Comment">type Graph = GraphT [String] [String] [String]</span>
+<span class="FoldColumn">  </span><span class="lnr">171 </span>
+<span class="FoldColumn">  </span><span class="lnr">172 </span><span class="Comment">newtype EdgeMap eid nid pid = EdgeMap { unEdgeMap :: (Map eid (Edge nid pid)) }</span>
+<span class="FoldColumn">  </span><span class="lnr">173 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">174 </span>
+<span class="FoldColumn">  </span><span class="lnr">175 </span><span class="Comment">newtype NodeMap nid = NodeMap (Map nid (Node nid))</span>
+<span class="FoldColumn">  </span><span class="lnr">176 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">177 </span>
+<span class="FoldColumn">  </span><span class="lnr">178 </span><span class="Comment">data ID gid = ID gid LocalID</span>
+<span class="FoldColumn">  </span><span class="lnr">179 </span><span class="Comment">    deriving(Eq,Ord,Show,Read,Functor)</span>
+<span class="FoldColumn">  </span><span class="lnr">180 </span>
+<span class="FoldColumn">  </span><span class="lnr">181 </span><span class="Comment">data LocalID = LocalID String Int</span>
+<span class="FoldColumn">  </span><span class="lnr">182 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">183 </span>
+<span class="FoldColumn">  </span><span class="lnr">184 </span><span class="Comment">data Port pid = Port Direction pid</span>
+<span class="FoldColumn">  </span><span class="lnr">185 </span><span class="Comment">    deriving(Eq,Ord,Show,Read,Functor)</span>
+<span class="FoldColumn">  </span><span class="lnr">186 </span>
+<span class="FoldColumn">  </span><span class="lnr">187 </span><span class="Comment">instance Applicative Port where</span>
+<span class="FoldColumn">  </span><span class="lnr">188 </span><span class="Comment">    pure x = Port Inout x</span>
+<span class="FoldColumn">  </span><span class="lnr">189 </span><span class="Comment">    (Port _ f) &lt;*&gt; (Port d x) = Port d (f x)</span>
+<span class="FoldColumn">  </span><span class="lnr">190 </span>
+<span class="FoldColumn">  </span><span class="lnr">191 </span><span class="Comment">instance Applicative ID where</span>
+<span class="FoldColumn">  </span><span class="lnr">192 </span><span class="Comment">    pure x = ID x (LocalID [] 0)</span>
+<span class="FoldColumn">  </span><span class="lnr">193 </span><span class="Comment">    (ID f _ ) &lt;*&gt; (ID x localid) = ID (f x) localid</span>
+<span class="FoldColumn">  </span><span class="lnr">194 </span>
+<span class="FoldColumn">  </span><span class="lnr">195 </span><span class="Comment">instance Monad ID where</span>
+<span class="FoldColumn">  </span><span class="lnr">196 </span><span class="Comment">    return = pure</span>
+<span class="FoldColumn">  </span><span class="lnr">197 </span><span class="Comment">    (ID gid lid) &gt;&gt;= f =</span>
+<span class="FoldColumn">  </span><span class="lnr">198 </span><span class="Comment">        let (ID gid' _ ) = f gid</span>
+<span class="FoldColumn">  </span><span class="lnr">199 </span><span class="Comment">         in ID gid' lid</span>
+<span class="FoldColumn">  </span><span class="lnr">200 </span>
+<span class="FoldColumn">  </span><span class="lnr">201 </span><span class="Comment">idLocalRenameWith ::  (LocalID -&gt; LocalID) -&gt; ID gid -&gt; ID gid</span>
+<span class="FoldColumn">  </span><span class="lnr">202 </span><span class="Comment">idLocalRenameWith f (ID g l) = ID g (f l)</span>
+<span class="FoldColumn">  </span><span class="lnr">203 </span>
+<span class="FoldColumn">  </span><span class="lnr">204 </span><span class="Comment">data CP nid pid = CP {</span>
+<span class="FoldColumn">  </span><span class="lnr">205 </span><span class="Comment">    cp_node :: (Node nid),</span>
+<span class="FoldColumn">  </span><span class="lnr">206 </span><span class="Comment">    cp_port :: (Port pid) }</span>
+<span class="FoldColumn">  </span><span class="lnr">207 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">208 </span>
+<span class="FoldColumn">  </span><span class="lnr">209 </span><span class="Comment">data Edge nid pid = EdgeDir {</span>
+<span class="FoldColumn">  </span><span class="lnr">210 </span><span class="Comment">    edge_source :: CP nid pid ,</span>
+<span class="FoldColumn">  </span><span class="lnr">211 </span><span class="Comment">    edge_targets :: (Set (CP nid pid ))}</span>
+<span class="FoldColumn">  </span><span class="lnr">212 </span><span class="Comment">    | EdgeUndir {</span>
+<span class="FoldColumn">  </span><span class="lnr">213 </span><span class="Comment">    edge_cpoints :: Set (CP nid pid) }</span>
+<span class="FoldColumn">  </span><span class="lnr">214 </span><span class="Comment">    deriving(Eq,Ord,Show,Read)</span>
+<span class="FoldColumn">  </span><span class="lnr">215 </span>
+<span class="FoldColumn">  </span><span class="lnr">216 </span><span class="Comment">data Node nid </span>
+<span class="FoldColumn">  </span><span class="lnr">217 </span><span class="Comment">    = Node </span>
+<span class="FoldColumn">  </span><span class="lnr">218 </span><span class="Comment">        {   node_id :: ID nid</span>
+<span class="FoldColumn">  </span><span class="lnr">219 </span><span class="Comment">        ,   node_property :: NodeProperty </span>
+<span class="FoldColumn">  </span><span class="lnr">220 </span><span class="Comment">        }</span>
+<span class="FoldColumn">  </span><span class="lnr">221 </span><span class="Comment">    | UniverseNode </span>
+<span class="FoldColumn">  </span><span class="lnr">222 </span><span class="Comment">    | SupplyNode S.Bit</span>
+<span class="FoldColumn">  </span><span class="lnr">223 </span><span class="Comment">    deriving(Eq,Ord,Show,Read,Functor)</span>
+<span class="FoldColumn">  </span><span class="lnr">224 </span>
+<span class="FoldColumn">  </span><span class="lnr">225 </span><span class="Comment">instance Applicative Node where</span>
+<span class="FoldColumn">  </span><span class="lnr">226 </span><span class="Comment">    pure x = Node (pure x) (Map.empty)</span>
+<span class="FoldColumn">  </span><span class="lnr">227 </span><span class="Comment">    (Node f _) &lt;*&gt; (Node nid p) = Node (f &lt;*&gt; nid) p</span>
+<span class="FoldColumn">  </span><span class="lnr">228 </span><span class="Comment">    UniverseNode &lt;*&gt; _ = UniverseNode</span>
+<span class="FoldColumn">  </span><span class="lnr">229 </span><span class="Comment">    (SupplyNode b) &lt;*&gt; _ = SupplyNode b</span>
+<span class="FoldColumn">  </span><span class="lnr">230 </span><span class="Comment">    _ &lt;*&gt; (SupplyNode b) = SupplyNode b</span>
+<span class="FoldColumn">  </span><span class="lnr">231 </span><span class="Comment">    _ &lt;*&gt; UniverseNode   = UniverseNode</span>
+<span class="FoldColumn">  </span><span class="lnr">232 </span>
+<span class="FoldColumn">  </span><span class="lnr">233 </span><span class="Comment">type NodeProperty = Map String [S.Bit]</span>
+<span class="FoldColumn">  </span><span class="lnr">234 </span>
+<span class="FoldColumn">  </span><span class="lnr">235 </span><span class="Comment">type Context = [String]</span>
+<span class="FoldColumn">  </span><span class="lnr">236 </span>
+<span class="FoldColumn">  </span><span class="lnr">237 </span>
+<span class="FoldColumn">  </span><span class="lnr">238 </span><span class="Comment">-- convert_portdecl :: Context -&gt; S.PortDecl -&gt; [Edge nid (ID Context)]</span>
+<span class="FoldColumn">  </span><span class="lnr">239 </span><span class="Comment">convert_portdecl c varfmap nodeid flist (S.PortDecl dir var) = </span>
+<span class="FoldColumn">  </span><span class="lnr">240 </span><span class="Comment">    let range = (S.variable_range var)</span>
+<span class="FoldColumn">  </span><span class="lnr">241 </span><span class="Comment">        in map mk_edge  $ map (CP UniverseNode) $ case range of</span>
+<span class="FoldColumn">  </span><span class="lnr">242 </span><span class="Comment">            [] -&gt; [go 0]</span>
+<span class="FoldColumn">  </span><span class="lnr">243 </span><span class="Comment">            xs -&gt; map go xs</span>
+<span class="FoldColumn">  </span><span class="lnr">244 </span><span class="Comment">    where</span>
+<span class="FoldColumn">  </span><span class="lnr">245 </span><span class="Comment">    mk_edge cp = EdgeUndir (Set.singleton cp)</span>
+<span class="FoldColumn">  </span><span class="lnr">246 </span><span class="Comment">    </span>
+<span class="FoldColumn">  </span><span class="lnr">247 </span><span class="Comment">    lname = S.variable_name var</span>
+<span class="FoldColumn">  </span><span class="lnr">248 </span><span class="Comment">    go i = Port dir (ID c (LocalID lname i))</span>
+<span class="FoldColumn">  </span><span class="lnr">249 </span>
+<span class="FoldColumn">  </span><span class="lnr">250 </span><span class="Comment">convert_wiredecl :: Context -&gt; S.WireDecl -&gt; EdgeMap (ID Context) nid pid</span>
+<span class="FoldColumn">  </span><span class="lnr">251 </span><span class="Comment">convert_wiredecl c (S.WireDecl t var) = let range = S.variable_range var</span>
+<span class="FoldColumn">  </span><span class="lnr">252 </span><span class="Comment">        in EdgeMap $ Map.fromList $ map mk_edge $ case range of</span>
+<span class="FoldColumn">  </span><span class="lnr">253 </span><span class="Comment">            [] -&gt; [go 0]</span>
+<span class="FoldColumn">  </span><span class="lnr">254 </span><span class="Comment">            xs -&gt; map go xs</span>
+<span class="FoldColumn">  </span><span class="lnr">255 </span><span class="Comment">    where</span>
+<span class="FoldColumn">  </span><span class="lnr">256 </span><span class="Comment">    mk_edge wid = (wid,EdgeUndir (Set.empty) )</span>
+<span class="FoldColumn">  </span><span class="lnr">257 </span><span class="Comment">    lname = S.variable_name var</span>
+<span class="FoldColumn">  </span><span class="lnr">258 </span><span class="Comment">    go i = ID c (LocalID lname i)</span>
+<span class="FoldColumn">  </span><span class="lnr">259 </span>
+<span class="FoldColumn">  </span><span class="lnr">260 </span>
+<span class="FoldColumn">  </span><span class="lnr">261 </span><span class="Comment">type GraphWithContext = GraphT (ID Context) (ID Context) (ID Context)</span>
+<span class="FoldColumn">  </span><span class="lnr">262 </span>
+<span class="FoldColumn">  </span><span class="lnr">263 </span><span class="Comment">build_primitive :: Context -&gt; (String -&gt; Edge (ID Context) (ID Context) ) -&gt; S.Module -&gt; GraphWithContext</span>
+<span class="FoldColumn">  </span><span class="lnr">264 </span><span class="Comment">build_primitive c varfmap (S.Module t pd wd lp name flist) = Graph public_edges private_edges nodes</span>
+<span class="FoldColumn">  </span><span class="lnr">265 </span><span class="Comment">    where</span>
+<span class="FoldColumn">  </span><span class="lnr">266 </span><span class="Comment">    public_edges = concatMap (convert_portdecl c varfmap nodeid flist) pd</span>
+<span class="FoldColumn">  </span><span class="lnr">267 </span><span class="Comment">    private_edges = EdgeMap $ Map.fromList $ concatMap (Map.toList . unEdgeMap . convert_wiredecl c) wd</span>
+<span class="FoldColumn">  </span><span class="lnr">268 </span><span class="Comment">    nodes = []</span>
+<span class="FoldColumn">  </span><span class="lnr">269 </span><span class="Comment">    nodeid = undefined</span>
+<span class="FoldColumn">  </span><span class="lnr">270 </span>
+<span class="FoldColumn">  </span><span class="lnr">271 </span>
+<span class="FoldColumn">  </span><span class="lnr">272 </span><span class="Comment">build_graph c (Tree.Node m []) = build_primitive c undefined m</span>
+<span class="FoldColumn">  </span><span class="lnr">273 </span><span class="Comment">build_graph c mtree = undefined</span>
+<span class="FoldColumn">  </span><span class="lnr">274 </span>
+<span class="FoldColumn">  </span><span class="lnr">275 </span><span class="Comment">-}</span>
+<span class="FoldColumn">  </span><span class="lnr">276 </span>
+<span class="FoldColumn">  </span><span class="lnr">277 </span><span class="Identifier">do_test</span> <span class="Statement">=</span> undefined
+<span class="FoldColumn">  </span><span class="lnr">278 </span>
+</pre>
+</body>
+</html>
