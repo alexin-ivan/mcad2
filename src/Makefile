@@ -10,7 +10,7 @@ DEBUG_DIR=../../debug/mcad2
 #EXE_PREFIX=TestStage2
 #EXE_PREFIX=Compile
 #EXE_PREFIX=TestDecompose
-EXE_PREFIX=TestHGraphSemantic
+#EXE_PREFIX=TestHGraphSemantic
 EXE_PREFIX=TestHGraphToVerilog
 #EXE_PREFIX=TestSemantic
 

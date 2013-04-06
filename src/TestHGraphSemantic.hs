@@ -7,7 +7,7 @@
 module Main where
 
 import TestGetAST
-import HGraphToVerilog
+import HGraphSemantic
 import Debug.Trace
 
 test :: IO ()

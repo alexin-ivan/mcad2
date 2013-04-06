@@ -1,0 +1,31 @@
+module ConnectionBox1(\SRAM[0] ,\SRAM[1] ,\SRAM[2] ,\SRAM[3] ,\SRAM[4] ,\SRAM[5] ,\SRAM[6] ,\SRAM[7] ,\i[0] ,\i[1] ,\i[2] ,\i[3] ,\o[0] ,\o[1] ,\o[2] ,\o[3] ,\s[0] ,\s[1] ,\s[2] ,\s[3] );
+input \SRAM[0]  ;
+input \SRAM[1]  ;
+input \SRAM[2]  ;
+input \SRAM[3]  ;
+input \SRAM[4]  ;
+input \SRAM[5]  ;
+input \SRAM[6]  ;
+input \SRAM[7]  ;
+input \i[0]  ;
+input \i[1]  ;
+input \i[2]  ;
+input \i[3]  ;
+output \o[0]  ;
+output \o[1]  ;
+output \o[2]  ;
+output \o[3]  ;
+input \s[0]  ;
+input \s[1]  ;
+input \s[2]  ;
+input \s[3]  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+
+endmodule
+
+

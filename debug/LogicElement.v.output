@@ -1,0 +1,169 @@
+module mux2(\d0 ,\d1 ,\q ,\sel );
+input \d0  ;
+input \d1  ;
+output \q  ;
+input \sel  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+assign \q = \sel ? \d1 : \d0 ;
+
+endmodule
+
+module LUT4(\SRAM[0] ,\SRAM[1] ,\SRAM[2] ,\SRAM[3] ,\SRAM[4] ,\SRAM[5] ,\SRAM[6] ,\SRAM[7] ,\SRAM[8] ,\SRAM[9] ,\SRAM[10] ,\SRAM[11] ,\SRAM[12] ,\SRAM[13] ,\SRAM[14] ,\SRAM[15] ,\i[0] ,\i[1] ,\i[2] ,\i[3] ,\o );
+input \SRAM[0]  ;
+input \SRAM[1]  ;
+input \SRAM[2]  ;
+input \SRAM[3]  ;
+input \SRAM[4]  ;
+input \SRAM[5]  ;
+input \SRAM[6]  ;
+input \SRAM[7]  ;
+input \SRAM[8]  ;
+input \SRAM[9]  ;
+input \SRAM[10]  ;
+input \SRAM[11]  ;
+input \SRAM[12]  ;
+input \SRAM[13]  ;
+input \SRAM[14]  ;
+input \SRAM[15]  ;
+input \i[0]  ;
+input \i[1]  ;
+input \i[2]  ;
+input \i[3]  ;
+output \o  ;
+
+tri \LUT4#t1[0] ;
+tri \LUT4#t1[1] ;
+tri \LUT4#t1[2] ;
+tri \LUT4#t1[3] ;
+tri \LUT4#t1[4] ;
+tri \LUT4#t1[5] ;
+tri \LUT4#t1[6] ;
+tri \LUT4#t1[7] ;
+tri \LUT4#t1[8] ;
+tri \LUT4#t2[0] ;
+tri \LUT4#t2[1] ;
+tri \LUT4#t2[2] ;
+tri \LUT4#t2[3] ;
+tri \LUT4#t2[4] ;
+tri \LUT4#t3[0] ;
+tri \LUT4#t3[1] ;
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+assign \LUT4#t1[0] = \i[0] ? \SRAM[0] : \SRAM[1] ;
+assign \LUT4#t1[1] = \i[0] ? \SRAM[2] : \SRAM[3] ;
+assign \LUT4#t1[2] = \i[0] ? \SRAM[4] : \SRAM[5] ;
+assign \LUT4#t1[3] = \i[0] ? \SRAM[6] : \SRAM[7] ;
+assign \LUT4#t1[4] = \i[0] ? \SRAM[8] : \SRAM[9] ;
+assign \LUT4#t1[5] = \i[0] ? \SRAM[10] : \SRAM[11] ;
+assign \LUT4#t1[6] = \i[0] ? \SRAM[12] : \SRAM[13] ;
+assign \LUT4#t1[7] = \i[0] ? \SRAM[14] : \SRAM[15] ;
+assign \LUT4#t2[0] = \i[1] ? \LUT4#t1[0] : \LUT4#t1[1] ;
+assign \LUT4#t2[1] = \i[1] ? \LUT4#t1[2] : \LUT4#t1[3] ;
+assign \LUT4#t2[2] = \i[1] ? \LUT4#t1[4] : \LUT4#t1[5] ;
+assign \LUT4#t2[3] = \i[1] ? \LUT4#t1[6] : \LUT4#t1[7] ;
+assign \LUT4#t3[0] = \i[2] ? \LUT4#t2[0] : \LUT4#t2[1] ;
+assign \LUT4#t3[1] = \i[2] ? \LUT4#t2[2] : \LUT4#t2[3] ;
+assign \o = \i[3] ? \LUT4#t3[0] : \LUT4#t3[1] ;
+
+endmodule
+
+module LE_DFF(\clk ,\d ,\q );
+input \clk  ;
+input \d  ;
+output \q  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+
+endmodule
+
+module LogicElement(\SRAM[0] ,\SRAM[1] ,\SRAM[2] ,\SRAM[3] ,\SRAM[4] ,\SRAM[5] ,\SRAM[6] ,\SRAM[7] ,\SRAM[8] ,\SRAM[9] ,\SRAM[10] ,\SRAM[11] ,\SRAM[12] ,\SRAM[13] ,\SRAM[14] ,\SRAM[15] ,\SRAM[16] ,\SRAM[17] ,\clk ,\i[0] ,\i[1] ,\i[2] ,\i[3] ,\o );
+input \SRAM[0]  ;
+input \SRAM[1]  ;
+input \SRAM[2]  ;
+input \SRAM[3]  ;
+input \SRAM[4]  ;
+input \SRAM[5]  ;
+input \SRAM[6]  ;
+input \SRAM[7]  ;
+input \SRAM[8]  ;
+input \SRAM[9]  ;
+input \SRAM[10]  ;
+input \SRAM[11]  ;
+input \SRAM[12]  ;
+input \SRAM[13]  ;
+input \SRAM[14]  ;
+input \SRAM[15]  ;
+input \SRAM[16]  ;
+input \SRAM[17]  ;
+input \clk  ;
+input \i[0]  ;
+input \i[1]  ;
+input \i[2]  ;
+input \i[3]  ;
+output \o  ;
+
+wire \LogicElement#dff_out ;
+wire \LogicElement#lut_in[0] ;
+wire \LogicElement#lut_in[1] ;
+wire \LogicElement#lut_in[2] ;
+wire \LogicElement#lut_in[3] ;
+wire \LogicElement#lut_out ;
+tri \lut#LogicElement#t1[0] ;
+tri \lut#LogicElement#t1[1] ;
+tri \lut#LogicElement#t1[2] ;
+tri \lut#LogicElement#t1[3] ;
+tri \lut#LogicElement#t1[4] ;
+tri \lut#LogicElement#t1[5] ;
+tri \lut#LogicElement#t1[6] ;
+tri \lut#LogicElement#t1[7] ;
+tri \lut#LogicElement#t1[8] ;
+tri \lut#LogicElement#t2[0] ;
+tri \lut#LogicElement#t2[1] ;
+tri \lut#LogicElement#t2[2] ;
+tri \lut#LogicElement#t2[3] ;
+tri \lut#LogicElement#t2[4] ;
+tri \lut#LogicElement#t3[0] ;
+tri \lut#LogicElement#t3[1] ;
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+assign \LogicElement#lut_in[0] = \i[0] ;
+assign \LogicElement#lut_in[1] = \i[1] ;
+assign \LogicElement#lut_in[2] = \i[2] ;
+assign \LogicElement#lut_in[3] = \SRAM[17] ? \i[3] : \LogicElement#dff_out ;
+assign \lut#LogicElement#t1[0] = \LogicElement#lut_in[0] ? \SRAM[0] : \SRAM[1] ;
+assign \lut#LogicElement#t1[1] = \LogicElement#lut_in[0] ? \SRAM[2] : \SRAM[3] ;
+assign \lut#LogicElement#t1[2] = \LogicElement#lut_in[0] ? \SRAM[4] : \SRAM[5] ;
+assign \lut#LogicElement#t1[3] = \LogicElement#lut_in[0] ? \SRAM[6] : \SRAM[7] ;
+assign \lut#LogicElement#t1[4] = \LogicElement#lut_in[0] ? \SRAM[8] : \SRAM[9] ;
+assign \lut#LogicElement#t1[5] = \LogicElement#lut_in[0] ? \SRAM[10] : \SRAM[11] ;
+assign \lut#LogicElement#t1[6] = \LogicElement#lut_in[0] ? \SRAM[12] : \SRAM[13] ;
+assign \lut#LogicElement#t1[7] = \LogicElement#lut_in[0] ? \SRAM[14] : \SRAM[15] ;
+assign \lut#LogicElement#t2[0] = \LogicElement#lut_in[1] ? \lut#LogicElement#t1[0] : \lut#LogicElement#t1[1] ;
+assign \lut#LogicElement#t2[1] = \LogicElement#lut_in[1] ? \lut#LogicElement#t1[2] : \lut#LogicElement#t1[3] ;
+assign \lut#LogicElement#t2[2] = \LogicElement#lut_in[1] ? \lut#LogicElement#t1[4] : \lut#LogicElement#t1[5] ;
+assign \lut#LogicElement#t2[3] = \LogicElement#lut_in[1] ? \lut#LogicElement#t1[6] : \lut#LogicElement#t1[7] ;
+assign \lut#LogicElement#t3[0] = \LogicElement#lut_in[2] ? \lut#LogicElement#t2[0] : \lut#LogicElement#t2[1] ;
+assign \lut#LogicElement#t3[1] = \LogicElement#lut_in[2] ? \lut#LogicElement#t2[2] : \lut#LogicElement#t2[3] ;
+assign \LogicElement#lut_out = \LogicElement#lut_in[3] ? \lut#LogicElement#t3[0] : \lut#LogicElement#t3[1] ;
+LE_DFF \dff (.\clk (\clk ),.\q (\LogicElement#dff_out ),.\d (\LogicElement#lut_out ));
+defparam \dff .front = 1'b1;
+assign \o = \SRAM[16] ? \LogicElement#dff_out : \LogicElement#lut_out ;
+
+endmodule
+
+

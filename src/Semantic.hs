@@ -184,7 +184,18 @@ instance_name_to_maybe (InstanceName x) = Just x
 instance_name_to_maybe (InstanceIID s i) = Just $ s ++ "~" ++ (show i)
 instance_name_to_maybe InstanceUnnamed = Nothing
 
-type ModuleType   = String
+data ModuleType = ModuleType
+    {   moduletype_name :: String
+    ,   moduletype_istop :: Bool
+    ,   moduletype_isprimitive :: Bool
+    }
+    deriving(Eq,Ord,Show,Read)
+
+default_moduletype = ModuleType 
+    { moduletype_name = ""
+    , moduletype_istop = False
+    , moduletype_isprimitive = False
+    }
 
 data Module = 
     Module ModuleType [PortDecl] [WireDecl] LocalParameters InstanceName (FormalMap Arg)
@@ -203,7 +214,7 @@ data ModuleT id =
 
 instance ASTShow Module where
     ast_show (Module t ps ws pr name' fl) = concat $
-        [name ++ " " ++ t ++ " " ++ (ast_show fl) ++ ";"] ++
+        [name ++ " " ++ (moduletype_name t) ++ " " ++ (ast_show fl) ++ ";"] ++
         (map ast_show ps) ++
         (map ast_show ws) ++
         [ast_show pr] ++
@@ -524,7 +535,7 @@ make_stms ::
 -}
 
 make_stms ports wires instance_name cenv stms ast = do
-        submodules <- mapM (\s -> make_stm s) submodule_stms
+        submodules <- liftM concat $ mapM (\s -> make_stm s) submodule_stms
         return $ rename submodules
     where
 
@@ -534,7 +545,7 @@ make_stms ports wires instance_name cenv stms ast = do
         go (Node (Module t pd wd lpr InstanceUnnamed fm) rest) = do
             i <- gets $ \m -> fromJust $ Map.lookup t m
             modify $ Map.update (\x -> Just $ x + 1) t
-            return $ Node (Module t pd wd lpr (InstanceIID t i) fm ) rest
+            return $ Node (Module t pd wd lpr (InstanceIID (moduletype_name t) i) fm ) rest
         
         go x  = return x
 
@@ -599,7 +610,12 @@ make_stms ports wires instance_name cenv stms ast = do
                 True -> Right (var_list,port_name)
                 False -> Left $ "Error in bindings: " ++ (show flist) ++ " ;"
     
-    make_stm :: A.Stm -> Result (Tree Module)
+    mk_primitive_mtype name = default_moduletype 
+        { moduletype_name = name
+        , moduletype_isprimitive = True
+        }
+    
+    make_stm :: A.Stm -> Result [Tree Module]
     make_stm (A.Assign rvalue lvalue) = do -- Right $ Node (Module [] [] [] Map.empty Nothing Map.empty) []
         r <- make_rvalue
         make_lvalue r lvalue
@@ -609,44 +625,71 @@ make_stms ports wires instance_name cenv stms ast = do
             s <- eval_arg env sel
             d1 <- eval_arg env a1
             d0 <- eval_arg env a0
-            m <- make_select r s d1 d0
-            return $ Node m []
+            ms <- make_select r s d1 d0
+            return $ map (\m -> Node m []) ms
 
         -- alias
         make_lvalue  r e@(A.E_Var _ _) = do
             l <- eval_arg env e
-            m <- make_alias r l
-            return $ Node m []
+            ms <- make_alias r l
+            return $ map (\m -> Node m []) ms
 
         -- attach
-        make_lvalue  r cr@(A.E_ConstantRange _ _) = Right $ Node (Module "attach" [] [] empry_local_parameters InstanceUnnamed empry_formal_map) []
+        make_lvalue  r cr@(A.E_ConstantRange _ _) = Right $ [Node (Module mtype [] [] empry_local_parameters InstanceUnnamed empry_formal_map) []]
+            where mtype = mk_primitive_mtype "attach"
+
         make_lvalue  r u@(A.E_Union xs) = do
             l <- eval_arg env u
-            m <- make_alias r l
-            return  $ Node m []
+            ms <- make_alias r l
+            return  $ map (\m -> Node m []) ms
 
         -- mux
-        make_select varlistR varlistS varlistD1 varlistD0 =
-            let select  = PortDecl A.Input  (make_variable "sel" [0..(length varlistS - 1)] )
-                d1      = PortDecl A.Input  (make_variable "d1"  [0..(length varlistD1 - 1)])
-                d0      = PortDecl A.Input  (make_variable "d0"  [0..(length varlistD0 - 1)])
-                outputs = PortDecl A.Output (make_variable "o"   [0..(length varlistR - 1)])
-                flist = [(varlistR,"o"),(varlistS,"sel"),(varlistD1,"d1"),(varlistD0,"d0")]
-                ports = [select,d1,d0,outputs]
-             in  if ((length varlistD0) == (length varlistD1)) && ((length varlistR) == (length varlistD0)) then
-                    liftM (\fl -> Module "mux" ports [] empry_local_parameters InstanceUnnamed fl) $ expand_flist flist ports
-                 else Left $ "Incomplete bindings in assign: " ++ (show flist)
-            
+        {-make_select varlistR varlistS varlistD1 varlistD0 =-}
+            {-let select  = PortDecl A.Input  (make_variable "sel" [0..(length varlistS - 1)] )-}
+                {-d1      = PortDecl A.Input  (make_variable "d1"  [0..(length varlistD1 - 1)])-}
+                {-d0      = PortDecl A.Input  (make_variable "d0"  [0..(length varlistD0 - 1)])-}
+                {-outputs = PortDecl A.Output (make_variable "o"   [0..(length varlistR - 1)])-}
+                {-flist = [(varlistR,"o"),(varlistS,"sel"),(varlistD1,"d1"),(varlistD0,"d0")]-}
+                {-ports = [select,d1,d0,outputs]-}
+             {-in  if ((length varlistD0) == (length varlistD1)) && ((length varlistR) == (length varlistD0)) then-}
+                    {-liftM (\fl -> Module mtype ports [] empry_local_parameters InstanceUnnamed fl) $ expand_flist flist ports-}
+                 {-else Left $ "Incomplete bindings in assign: " ++ (show flist)-}
+            {-where -}
+            {-mtype = mk_primitive_mtype "mux"-}
+            {-mk_module ps fm = Module mtype ps [] empry_local_parameters InstanceUnnamed fm-}
+        
+        make_select varlistR varlistS varlistD1 varlistD0
+            | ((length varlistD0) == (length varlistD1)) && ((length varlistR) == (length varlistD0))
+                = mapM make_select' $ zip4 varlistR varlistS varlistD1 varlistD0
+            | otherwise = Left $ "Incomplete bindings in assign: " ++ (show flistAll)
+            where
+            flistAll = [(varlistR,"o"),(varlistS,"sel"),(varlistD1,"d1"),(varlistD0,"d0")]
+            make_select' (varR,varS,varD1,varD0) =
+                let select  = PortDecl A.Input  (make_variable "sel" [])
+                    d1      = PortDecl A.Input  (make_variable "d1"  [])
+                    d0      = PortDecl A.Input  (make_variable "d0"  [])
+                    outputs = PortDecl A.Output (make_variable "o"   [])
+                    flist = [(varR,"o"),(varS,"sel"),(varD1,"d1"),(varD0,"d0")]
+                    ports = [select,d1,d0,outputs]
+                 in  mk_module "mux" ports flist
+        
+        mk_module mtype ps fm = 
+                liftM (Module (mk_primitive_mtype mtype) ps [] empry_local_parameters InstanceUnnamed) fm'
+            where
+            fm' = expand_flist (map (\(x,y) -> ([x],y)) fm) ps
 
-        make_alias :: VarList Arg -> VarList Arg -> Result Module
-        make_alias varlistR varlistL =
-            let inputs = PortDecl A.Input   (make_variable "i"   [0..(length varlistL - 1)])
-                outputs = PortDecl A.Output (make_variable "o" [0..(length varlistR - 1)])
-                flist = [(varlistL,"i"),(varlistR,"o")]
-                ports = [inputs,outputs]
-             in  if (length varlistR) == (length varlistL) then
-                    liftM (\fl -> Module "alias" ports [] empry_local_parameters InstanceUnnamed fl) $ expand_flist flist ports
-                 else Left $ "Incomplete bindings in assign: " ++ (show flist)
+        make_alias varlistR varlistL
+            | (length varlistR) == (length varlistL)
+                = mapM make_alias' $ zip varlistR varlistL
+            | otherwise = Left $ "Incomplete bindings in assign: " ++ (show flistAll)
+            where
+            flistAll = [(varlistL,"i"),(varlistR,"o")]
+            make_alias' (varR,varL) =
+                let inputs = PortDecl A.Input   (make_variable "i" [])
+                    outputs = PortDecl A.Output (make_variable "o" [])
+                    flist = [(varL,"i"),(varR,"o")]
+                    ports = [inputs,outputs]
+                 in mk_module "alias" ports flist
 
     make_stm (A.Submodule mtype name aflist) = do
         let defparams = filterDefs name
@@ -658,7 +701,7 @@ make_stms ports wires instance_name cenv stms ast = do
         ast_m <- findModule mtype
         flist <- aflist_to_flist (A.module_portdef ast_m) aflist
         m <- make_module params name' flist ast_m ast
-        return m
+        return [m]
 
 params_to_cenv :: [Parameter String [Bit]] -> CEnv
 params_to_cenv p = Map.fromList $ map param_to_pair p
@@ -687,9 +730,16 @@ make_module def_params instance_name flist m ast = do
             Left s -> Left $ "Error in module `" ++ show (name,instance_name) ++ "`:" ++ s
             Right x -> Right x
 --        let subs = []
-        let my = Module name ports wires (LocalParameters params) instance_name formalmap
+        let my = Module mtype ports wires (LocalParameters $ local_params params) instance_name formalmap
         return $ Node my subs
     where
+    mtype = default_moduletype { moduletype_name = name, moduletype_istop = False }
+
+    local_params params = Map.filterWithKey (const . is_self_param ) params
+        where
+        param_names = map (\(A.Parameter n _ ) -> n ) self_params
+        is_self_param s = s `elem` param_names
+
     port_decls = A.module_portdecl m
     port_defs  = A.module_portdef  m
     wire_delcs = A.module_wires m

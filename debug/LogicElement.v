@@ -47,6 +47,7 @@ endmodule
 module LE_DFF(d,clk,q);
 input d,clk;
 output q;
+parameter front=1'b0;
 
 endmodule
 
@@ -59,15 +60,17 @@ output o;
 wire lut_out,dff_out;
 wire [0:3] lut_in;
 
-parameter SRAM_SIZE = 16;
+parameter SRAM_SIZE = 17;
 parameter SRAM_LUT_MASK = 32'b0[14:SRAM_SIZE];
 
-assign lut_in[0:3] = i[0:3];
+assign lut_in[0:2] = i[0:2];
 mux2 com_or_seq_selector(.d0(dff_out),.d1(i[3]),.sel(SRAM[17]),.q(lut_in[3]));
+//assign lut_in[3] = SRAM[17] ? i[3] : dff_out;
 
 LUT4 lut(.SRAM(SRAM[0:15]), .i(lut_in), .o(lut_out));
 defparam lut.mask=1'b0;
 LE_DFF dff(.d(lut_out), .clk(clk), .q(dff_out));
+defparam dff.front=1'b1;
 
 assign o = SRAM[16] ? dff_out : lut_out;
 

@@ -1,0 +1,82 @@
+module LogicElement(\SRAM[0] ,\SRAM[1] ,\SRAM[2] ,\SRAM[3] ,\SRAM[4] ,\SRAM[5] ,\SRAM[6] ,\SRAM[7] ,\SRAM[8] ,\SRAM[9] ,\SRAM[10] ,\SRAM[11] ,\SRAM[12] ,\SRAM[13] ,\SRAM[14] ,\SRAM[15] ,\SRAM[16] ,\SRAM[17] ,\clk ,\i ,\o );
+input \SRAM[0]  ;
+input \SRAM[1]  ;
+input \SRAM[2]  ;
+input \SRAM[3]  ;
+input \SRAM[4]  ;
+input \SRAM[5]  ;
+input \SRAM[6]  ;
+input \SRAM[7]  ;
+input \SRAM[8]  ;
+input \SRAM[9]  ;
+input \SRAM[10]  ;
+input \SRAM[11]  ;
+input \SRAM[12]  ;
+input \SRAM[13]  ;
+input \SRAM[14]  ;
+input \SRAM[15]  ;
+input \SRAM[16]  ;
+input \SRAM[17]  ;
+input \clk  ;
+input \i  ;
+output \o  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+
+endmodule
+
+module top(\SRAM[0] ,\SRAM[1] ,\SRAM[2] ,\SRAM[3] ,\SRAM[4] ,\SRAM[5] ,\SRAM[6] ,\SRAM[7] ,\SRAM[8] ,\SRAM[9] ,\SRAM[10] ,\SRAM[11] ,\SRAM[12] ,\SRAM[13] ,\SRAM[14] ,\SRAM[15] ,\SRAM[16] ,\SRAM[17] ,\SRAM[18] ,\SRAM[19] ,\SRAM[20] ,\SRAM[21] ,\SRAM[22] ,\SRAM[23] ,\SRAM[24] ,\SRAM[25] ,\SRAM[26] ,\SRAM[27] ,\SRAM[28] ,\SRAM[29] ,\SRAM[30] ,\SRAM[31] ,\clk ,\i[0] ,\i[1] ,\i[2] ,\i[3] ,\o );
+input \SRAM[0]  ;
+input \SRAM[1]  ;
+input \SRAM[2]  ;
+input \SRAM[3]  ;
+input \SRAM[4]  ;
+input \SRAM[5]  ;
+input \SRAM[6]  ;
+input \SRAM[7]  ;
+input \SRAM[8]  ;
+input \SRAM[9]  ;
+input \SRAM[10]  ;
+input \SRAM[11]  ;
+input \SRAM[12]  ;
+input \SRAM[13]  ;
+input \SRAM[14]  ;
+input \SRAM[15]  ;
+input \SRAM[16]  ;
+input \SRAM[17]  ;
+input \SRAM[18]  ;
+input \SRAM[19]  ;
+input \SRAM[20]  ;
+input \SRAM[21]  ;
+input \SRAM[22]  ;
+input \SRAM[23]  ;
+input \SRAM[24]  ;
+input \SRAM[25]  ;
+input \SRAM[26]  ;
+input \SRAM[27]  ;
+input \SRAM[28]  ;
+input \SRAM[29]  ;
+input \SRAM[30]  ;
+input \SRAM[31]  ;
+input \clk  ;
+input \i[0]  ;
+input \i[1]  ;
+input \i[2]  ;
+input \i[3]  ;
+output \o  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+LogicElement \le (.\SRAM[17] (\SRAM[0] ),.\SRAM[16] (\SRAM[1] ),.\SRAM[15] (\SRAM[2] ),.\SRAM[14] (\SRAM[3] ),.\SRAM[13] (\SRAM[4] ),.\SRAM[12] (\SRAM[5] ),.\SRAM[11] (\SRAM[6] ),.\SRAM[10] (\SRAM[7] ),.\SRAM[9] (\SRAM[8] ),.\SRAM[8] (\SRAM[9] ),.\SRAM[7] (\SRAM[10] ),.\SRAM[6] (\SRAM[11] ),.\SRAM[5] (\SRAM[12] ),.\SRAM[4] (\SRAM[13] ),.\SRAM[3] (\SRAM[14] ),.\SRAM[2] (\SRAM[15] ),.\SRAM[1] (\SRAM[16] ),.\SRAM[0] (\SRAM[17] ),.\clk (\clk ),.\i (\i[0] ),.\o (\o ));
+
+
+endmodule
+
+

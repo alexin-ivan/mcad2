@@ -47,7 +47,7 @@ instance S.ASTShow Arg where
         showPair s (Just i) = s ++ "[" ++ (show i) ++ "]"
 
 
-data Value = SValue Arg | CValue S.Bit
+data Value = SValue { svalue_arg :: Arg} | CValue { cvalue_bit :: S.Bit }
     deriving(Eq,Ord,Show,Read)
 
 instance S.ASTShow Value where
@@ -160,9 +160,10 @@ convert_top ast = conv_top $ convert_tree [] ast
     where
     conv_top (Tree.Node m ms) = Tree.Node m' ms
         where
-        m' = m {module_flist = FormalMap new_flist}
+        m' = m {module_flist = FormalMap new_flist, module_type = new_type}
         portdecl = module_portdecl m
         new_flist = Map.fromList $ map expand_port portdecl
+        new_type =  (module_type m) { S.moduletype_istop = True}
 
     expand_port port@(Port arg _) = (SValue arg',port)
         where
@@ -333,8 +334,8 @@ drawModule tree' = "module " ++ mname ++ "(" ++ port_names ++ ");\n" ++ port_dec
 -- do_test :: [A.Module] -> Result [PortDecl]
 do_test ast = case mapM (\x -> S.make_module Map.empty (S.InstanceName (A.module_name x) ) [] x ast) ast of
     Left s -> s
---    Right t -> unlines $ map (drawTree . fmap S.ast_show) t
-    Right t -> unlines $ map show $ map convert_top t
+    Right t -> unlines $ map (Tree.drawTree . fmap S.ast_show) t
+--    Right t -> unlines $ map show $ map convert_top t
 
 
 build_gtrees ::  [A.Module] -> S.Result [Tree.Tree Module]

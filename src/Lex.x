@@ -24,7 +24,7 @@ $quote = "
 
 @var_id = [$alpha] [$alpha $digit \_\~]*
 
-@extra_var_id = \\[$alpha$digit\_\~\[\]]*
+@extra_var_id = \\[$alpha$digit\_\~\[\]\|]*
 
 tokens :-
     $white+                     ;
@@ -61,7 +61,7 @@ tokens :-
     "//" .*                     ; -- comment
     "`" .*                      ; -- vpp
     
-    @extra_var_id               {token_input (\s -> TId s) }
+    @extra_var_id               {token_input (\s -> TId $ tail s) }
 
     $digit+ "'b" $bin_value+  {token_input (\s -> TBinDigit s) }
     $digit+ "'h" $hex_value+  {token_input (\s -> THexDigit s) }

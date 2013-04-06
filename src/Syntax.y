@@ -222,7 +222,7 @@ Expr :: { Expr }
     | Expr "&" Expr                  { E_BitOp (BE_And $1 $3) }
     | Expr "|" Expr                  { E_BitOp (BE_Or  $1 $3) }
 
-{-
+{- {{{
 Expr :: { Expr }
     : var_id Range                   { E_Var $1 $2          }
     | Constant                       { E_Constant $1        }
@@ -232,7 +232,7 @@ Expr :: { Expr }
     | "~" Expr                       { E_Neg $2             }
     | Expr "&" Expr                  { E_And $1 $3          }
     | Expr "|" Expr                  { E_Or  $1 $3          }
--}
+}}} -}
 
 ExprList :: {[Expr]}
     : Expr                            { [$1] }

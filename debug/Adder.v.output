@@ -1,0 +1,32 @@
+module and2(\a ,\b ,\q );
+input \a  ;
+input \b  ;
+output \q  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+
+endmodule
+
+module Adder(\a ,\b ,\c ,\s );
+input \a  ;
+input \b  ;
+output \c  ;
+output \s  ;
+
+wire 1'b1 ;
+wire 1'b0 ;
+wire 1'bx ;
+wire 1'bz ;
+
+and2 \a1 (.\a (\a ),.\b (\b ),.\q (\c ));
+
+and2 \a2 (.\a (\a ),.\b (\b ),.\q (\s ));
+
+
+endmodule
+
+

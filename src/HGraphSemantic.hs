@@ -36,12 +36,18 @@ import Control.Monad.State
 import Debug.Trace
 
 build :: AST -> Graph
-build ast = build_tree (addLocalEdges top (Graph edges nodes)) ast
+build ast = build_tree (addLocalEdges top (Graph (Map.union edges top_consts) nodes)) ast
     where
     top = Tree.rootLabel ast
     formalmap = module_flist top
     flist = Map.toList $ unFormalMap $ formalmap
     nodes = []
+    
+    top_consts :: EdgeMap
+    top_consts = Map.fromList $ map mk_edge [S.L,S.H,S.Z,S.X]
+        where
+        mk_edge b = ([Wire (CValue b) WireSimple],[])
+    
     edges = Map.fromList $ map go flist
         where
         go (value,port) = ([eid],[port])
@@ -85,13 +91,22 @@ enter_context_edges (FormalMap flist) edges = Map.mapKeys go edges
         Just x  -> enter eid x
         where value = wire_arg $ head $ eid
 
+invert_map flist = Map.fromList $ map (\(x,y) -> (y,x) ) $ Map.toList flist
+
 leave_context_edges ::  FormalMap -> EdgeMap -> EdgeMap
 leave_context_edges (FormalMap flist) edges = Map.mapKeys go edges
     where
-    go eid = case Map.lookup value flist of
-        Nothing -> eid
-        Just x  -> tail eid
-        where value = wire_arg $ head $ eid
+    flist' :: [Arg]
+    flist' = map port_arg $ Map.elems flist
+    go eid = case value of
+            SValue arg | arg `elem` flist' -> tail $ tr eid
+                         | otherwise -> eid
+            _ -> eid
+        where 
+        value = wire_arg $ head $ eid
+        tr = id
+--        tr x = trace ("Lookup: " ++ (show value) ++ "in: " ++ (show flist) ) x
+--        tr e = trace ("Leave: " ++ (show e)) e
 
 withEdges f g = g {graph_edges = new_edges }
     where new_edges = f $ graph_edges g
@@ -112,14 +127,10 @@ graph_union gs = Graph new_edges new_nodes
     new_edges = Map.unionsWith uf $ map graph_edges gs
     uf a b = List.union a b
 
-build_tree ::  Graph -> AST -> Graph
-build_tree g (Tree.Node m []) =
-        g { graph_edges = new_edges, graph_nodes = new_nodes }
+module2mode :: EdgeMap -> Module -> Node
+module2mode edges m = trace (show node) $ node 
     where
-    edges = graph_edges g
-    nodes = graph_nodes g
-
-    new_nodes = node : nodes
+    flist = unFormalMap $ module_flist m
     node = Node mid t lp $ NodeFormalList fl
         where
         mid = module_id m
@@ -135,6 +146,35 @@ build_tree g (Tree.Node m []) =
             k = wire_arg $ head addr
 
 
+setModuleIsPrimitive isprim m = m { module_type = mtype }
+    where mtype = (module_type m) { S.moduletype_isprimitive = isprim }
+
+build_tree ::  Graph -> AST -> Graph
+build_tree g (Tree.Node m []) =
+        g { graph_edges = new_edges, graph_nodes = new_nodes }
+    where
+    edges = graph_edges g
+    nodes = graph_nodes g
+
+    new_nodes = node : nodes
+    node = module2mode edges (setModuleIsPrimitive True m)
+
+{-
+    node = Node mid t lp $ NodeFormalList fl
+        where
+        mid = module_id m
+        lp = module_params m
+        t = module_type m
+        fl = Map.fromList $ concatMap local_edges $ Map.toList edges
+        local_edges :: ([Wire],Edge) -> [(Wire,Port)]
+        local_edges (addr,_) = case Map.lookup k flist of
+            Nothing -> []
+            Just x  -> [(wire,x)]
+            where
+            wire = last addr
+            k = wire_arg $ head addr
+-}
+
         
      
     flist = unFormalMap $ module_flist m
@@ -148,13 +188,20 @@ build_tree g (Tree.Node m []) =
             where
             value = wire_arg $ head wire
 
-build_tree g (Tree.Node m ms) = graph_union gs
+build_tree g (Tree.Node m ms) = addNode node $ graph_union gs
     where
     flist = module_flist m
     enter_context' = enter_context flist
     leave_context' = leave_context flist
     local_g = addLocalEdges m $ enter_context' g
     gs = map (leave_context' . build_tree local_g) ms
+
+    node = module2mode (graph_edges g) (setModuleIsPrimitive False m)
+
+addNode n g = g {graph_nodes = new_nodes }
+    where new_nodes = n : (graph_nodes g)
+
+
 
 {-
 type EdgeLabel = Wire
