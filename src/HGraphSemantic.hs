@@ -128,7 +128,7 @@ graph_union gs = Graph new_edges new_nodes
     uf a b = List.union a b
 
 module2mode :: EdgeMap -> Module -> Node
-module2mode edges m = trace (show node) $ node 
+module2mode edges m = node 
     where
     flist = unFormalMap $ module_flist m
     node = Node mid t lp $ NodeFormalList fl

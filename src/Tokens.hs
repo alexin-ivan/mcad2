@@ -47,6 +47,7 @@ data TokenType =
     TLexError String|
     TEOF
 
+
     deriving(Eq,Ord,Show,Read)
 
 

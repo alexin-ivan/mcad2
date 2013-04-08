@@ -340,5 +340,8 @@ do_test ast = case mapM (\x -> S.make_module Map.empty (S.InstanceName (A.module
 
 build_gtrees ::  [A.Module] -> S.Result [Tree.Tree Module]
 build_gtrees ast = liftM (map convert_top) $ mapM (\x -> S.make_module Map.empty (S.InstanceName (A.module_name x) ) [] x ast) ast
+    where
+--    ast = trace (show fnames) $ concat $ Tree.flatten $ fmap A.file_modules ast'
+--    fnames = concat $ Tree.flatten $ fmap A.file_name ast'
 
 

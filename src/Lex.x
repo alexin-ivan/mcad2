@@ -24,6 +24,8 @@ $quote = "
 
 @var_id = [$alpha] [$alpha $digit \_\~]*
 
+@filepath=@string
+
 @extra_var_id = \\[$alpha$digit\_\~\[\]\|]*
 
 tokens :-
@@ -57,6 +59,9 @@ tokens :-
     "~"                         {token_simple TTilda }
     "&"                         {token_simple TAnd }
     "|"                         {token_simple TOr }
+    
+--    "//{ " @string              {token_input $ \s -> TFileBegin $ read $ drop 4 s }
+--    "//} " @string              {token_input $ \s -> TFileEnd $ read $ drop 4 s }
     
     "//" .*                     ; -- comment
     "`" .*                      ; -- vpp

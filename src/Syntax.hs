@@ -4,6 +4,7 @@ module Syntax where
 import AST
 import Lex
 import Tokens
+import qualified Data.Tree as Tree
 
 -- parser produced by Happy Version 1.18.10
 
@@ -265,38 +266,35 @@ happyReduce_1,
 	-> [(TokenType)] -> (Either String) HappyAbsSyn)
 
 action_0 (35) = happyShift action_4
-action_0 (67) = happyShift action_5
-action_0 (4) = happyGoto action_6
+action_0 (4) = happyGoto action_5
 action_0 (5) = happyGoto action_2
 action_0 (6) = happyGoto action_3
-action_0 _ = happyFail
+action_0 _ = happyReduce_4
 
 action_1 (35) = happyShift action_4
-action_1 (67) = happyShift action_5
 action_1 (5) = happyGoto action_2
 action_1 (6) = happyGoto action_3
 action_1 _ = happyFail
 
-action_2 _ = happyReduce_1
+action_2 (35) = happyShift action_4
+action_2 (67) = happyShift action_8
+action_2 (6) = happyGoto action_7
+action_2 _ = happyFail
 
-action_3 (35) = happyShift action_4
-action_3 (67) = happyShift action_5
-action_3 (5) = happyGoto action_8
-action_3 (6) = happyGoto action_3
 action_3 _ = happyReduce_2
 
-action_4 (65) = happyShift action_7
+action_4 (65) = happyShift action_6
 action_4 _ = happyFail
 
-action_5 _ = happyReduce_4
+action_5 (68) = happyAccept
+action_5 _ = happyFail
 
-action_6 (68) = happyAccept
+action_6 (45) = happyShift action_9
 action_6 _ = happyFail
 
-action_7 (45) = happyShift action_9
-action_7 _ = happyFail
+action_7 _ = happyReduce_3
 
-action_8 _ = happyReduce_3
+action_8 _ = happyReduce_1
 
 action_9 (65) = happyShift action_11
 action_9 (7) = happyGoto action_10
@@ -992,12 +990,13 @@ action_127 _ = happyReduce_43
 
 action_128 _ = happyReduce_73
 
-happyReduce_1 = happySpecReduce_1  4 happyReduction_1
-happyReduction_1 (HappyAbsSyn4  happy_var_1)
+happyReduce_1 = happySpecReduce_2  4 happyReduction_1
+happyReduction_1 _
+	(HappyAbsSyn4  happy_var_1)
 	 =  HappyAbsSyn4
 		 (happy_var_1
 	)
-happyReduction_1 _  = notHappyAtAll 
+happyReduction_1 _ _  = notHappyAtAll 
 
 happyReduce_2 = happySpecReduce_1  5 happyReduction_2
 happyReduction_2 (HappyAbsSyn6  happy_var_1)
@@ -1007,16 +1006,15 @@ happyReduction_2 (HappyAbsSyn6  happy_var_1)
 happyReduction_2 _  = notHappyAtAll 
 
 happyReduce_3 = happySpecReduce_2  5 happyReduction_3
-happyReduction_3 (HappyAbsSyn4  happy_var_2)
-	(HappyAbsSyn6  happy_var_1)
+happyReduction_3 (HappyAbsSyn6  happy_var_2)
+	(HappyAbsSyn4  happy_var_1)
 	 =  HappyAbsSyn4
-		 (happy_var_1 : happy_var_2
+		 (happy_var_2 : happy_var_1
 	)
 happyReduction_3 _ _  = notHappyAtAll 
 
-happyReduce_4 = happySpecReduce_1  5 happyReduction_4
-happyReduction_4 _
-	 =  HappyAbsSyn4
+happyReduce_4 = happySpecReduce_0  5 happyReduction_4
+happyReduction_4  =  HappyAbsSyn4
 		 ([]
 	)
 

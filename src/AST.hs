@@ -7,16 +7,25 @@
 module AST where
 
 import Data.List
+import Data.Tree(Tree)
+import qualified Data.Tree as Tree
 
 class ASTPrinter a where
     print_struct :: a -> String
+
+data File = File { file_name :: FilePath, file_modules :: [Module] }
+    deriving(Eq,Ord,Show,Read)
+
+type AST = Tree File
 
 -- name, port_def, mstms
 data Module = Module String [String] ModuleStms
     deriving(Eq,Ord,Show,Read)
 
 print_ast :: [Module] -> String
-print_ast = concat . (intersperse "\n") . (map print_struct)
+print_ast = print_modules -- Tree.drawTree . fmap (print_modules . file_modules )
+    where
+    print_modules = concat . (intersperse "\n") . (map print_struct)
 
 print_struct_varlist :: [String] -> String
 print_struct_varlist = concat . (intersperse ",")

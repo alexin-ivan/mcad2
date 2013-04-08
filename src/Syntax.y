@@ -6,7 +6,7 @@ module Syntax where
 import AST
 import Lex
 import Tokens
-
+import qualified Data.Tree as Tree
 
 }
 
@@ -73,14 +73,13 @@ import Tokens
 %%
 
 VerilogFile :: { [Module] }
-    :
-	   ModuleList		{ $1 }
+    : ModuleList eof               { $1 }
 
 ModuleList  :: { [Module] }
     :
-	  Module		{ [$1] }
-	  | Module ModuleList	{ $1 : $2 }
-	  | eof		{ [] }
+	  Module		        { [$1] }
+	  | ModuleList Module	{ $2 : $1 }
+      |                     { [] }
 
 
 Module :: { Module }

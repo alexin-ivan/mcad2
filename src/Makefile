@@ -1,5 +1,6 @@
 
-SOURCES=Syntax.hs Lex.hs Tokens.hs AST.hs Semantic.hs Semantic3.hs
+SYNTAX_SOURCES=Syntax.hs Lex.hs Tokens.hs AST.hs
+SOURCES=$(SYNTAX_SOURCES) Semantic.hs Semantic3.hs
 #SymbolTable.hs
 #DEBUG_DIR=./../../../debug/parser
 #DEBUG_DIR=~/programms/svn/debug/parser
@@ -48,15 +49,22 @@ test_clean:
 test:	$(EXE_PATH)
 	cd $(DEBUG_DIR); $(MAKE) -e EXE_NAME=$(EXE_FILE)
 
+$(DEBUG_DIR)/vp.exe: VPSimple.hs TestVPSimple.hs
+	ghc --make VPSimple.hs TestVPSimple.hs -o $(DEBUG_DIR)/vp.exe -outputdir $(DEBUG_DIR)/obj
 
-# Syntax Test {{{
-#test_syntax: $(DEBUG_DIR)/TestSyntax.exe
-#	cd $(DEBUG_DIR); $(MAKE) -e EXE_NAME=TestSyntax.exe
+vp: $(DEBUG_DIR)/vp.exe
 
-#$(DEBUG_DIR)/TestSyntax.exe: $(SOURCES) TestSyntax.hs
-#	ghc --make $(SOURCES) TestSyntax.hs -o $(DEBUG_DIR)/TestSyntax.exe -outputdir $(DEBUG_DIR)/obj
+vptest: $(DEBUG_DIR)/vp.exe
+	cd $(DEBUG_DIR); $(MAKE) -e EXE_NAME=$(DEBUG_DIR)/vp.exe
 
-# }}}
+#Syntax Test {{{
+test_syntax: $(DEBUG_DIR)/TestSyntax.exe
+	cd $(DEBUG_DIR); $(MAKE) -e EXE_NAME=TestSyntax.exe
+
+$(DEBUG_DIR)/TestSyntax.exe: $(SYNTAX_SOURCES) TestSyntax.hs
+	ghc --make $(SOURCES) TestSyntax.hs -o $(DEBUG_DIR)/TestSyntax.exe -outputdir $(DEBUG_DIR)/obj
+
+#}}}
 
 
 
