@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 --
 -- Author: Ivan
@@ -19,7 +20,12 @@ data File = File { file_name :: FilePath, file_modules :: [Module] }
 type AST = Tree File
 
 -- name, port_def, mstms
-data Module = Module String [String] ModuleStms
+data Module = Module 
+    { ast_module_attrlist :: AttributeList
+    , ast_module_name :: String
+    , ast_module_portdefs :: [String]
+    , ast_module_stms :: ModuleStms
+    }
     deriving(Eq,Ord,Show,Read)
 
 print_ast :: [Module] -> String
@@ -30,17 +36,18 @@ print_ast = print_modules -- Tree.drawTree . fmap (print_modules . file_modules 
 print_struct_varlist :: [String] -> String
 print_struct_varlist = concat . (intersperse ",")
 
-module_name      (Module name _  _ )  = name
-module_portdef   (Module _   pd  _ )  = pd
+module_name       = ast_module_name
+module_portdef    = ast_module_portdefs
 
-module_portdecl  (Module _ _  (ModuleStms pd w pr stms  ) ) = pd
-module_wires     (Module _ _  (ModuleStms pd w pr stms  ) ) = w
-module_params    (Module _ _  (ModuleStms pd w pr stms  ) ) = pr
-module_stms      (Module _ _  (ModuleStms pd w pr stms  ) ) = stms
+module_portdecl  (ast_module_stms -> (ModuleStms pd w pr stms  ) ) = pd
+module_wires     (ast_module_stms -> (ModuleStms pd w pr stms  ) ) = w
+module_params    (ast_module_stms -> (ModuleStms pd w pr stms  ) ) = pr
+module_stms      (ast_module_stms -> (ModuleStms pd w pr stms  ) ) = stms
+module_attrs     (ast_module_attrlist -> attrs) = attrs
 
 instance ASTPrinter Module where
-    print_struct (Module name portdef mstms) = 
-        "module " ++ name ++ "(\n" ++ (print_struct_varlist portdef) ++ "\n);\n" ++
+    print_struct (Module attrs name portdef mstms) = 
+        (print_struct attrs) ++ " module " ++ name ++ "(\n" ++ (print_struct_varlist portdef) ++ "\n);\n" ++
         module_stms ++
         "endmodule\n"
         where
@@ -60,10 +67,15 @@ instance ASTPrinter ModuleStms where
             pa = map print_struct' params
             s = map print_struct' stms
          in unlines (p ++ w ++ pa ++ s)
-		where
-		print_struct' x = (print_struct x) ++ "// " ++ (show x)
+        where
+        print_struct' x = (print_struct x) ++ "// " ++ (show x)
 ----------------------------------------------------------------
 --
+
+data Attribute = Attribute String Int
+    deriving(Eq,Ord,Show,Read)
+
+----------------------------------------------------------------
 
 data Digit = 
     BinDigit String | 
@@ -124,8 +136,6 @@ data Expr =
 {-
 data Expr = 
     E_Constant Const |
-    E_ConstantRange Const Range |
-    E_Var String Range |
     E_Neg Expr |
     E_And Expr Expr |
     E_Or Expr Expr |
@@ -152,7 +162,9 @@ instance ASTPrinter Expr where
 
     print_struct (E_Union exs)  = "{" ++ (concat $ intersperse "," $ map print_struct exs) ++ "}"
     print_struct (E_BitOp op)   = print_struct op
-    print_struct x              = "<><><><><><><><>" ++ show x ++ "<><><><><><><>"
+    print_struct (E_ConstantRange c r)   = (print_struct c) ++ (print_struct r)
+
+--    print_struct x              = "<><><><><><><><>" ++ show x ++ "<><><><><><><>"
 
 -- consts
 
@@ -267,11 +279,13 @@ instance ASTPrinter SubmoduleFlist where
     print_struct (SubmoduleFlistStrict pairs) = print_struct_varlist $ map print_pair pairs
         where
         print_pair (s,expr) = "." ++ s ++ "(" ++ (print_struct expr) ++ ")"
-    
+
+newtype AttributeList = AttributeList { unAttributeList :: [Attribute] }
+    deriving(Eq,Ord,Show,Read)
 
 data Stm = 
     -- assign q = a
-    Assign Expr Expr |
+    Assign AttributeList Expr Expr |
 --    CAssign PortName Expr |
 --    Alias PortName PortName |
     -- type [id] (.port1(x),.port2(y))
@@ -282,9 +296,16 @@ data Stm =
 
     deriving(Eq,Ord,Show,Read)
 
+instance ASTPrinter Attribute where
+    print_struct (Attribute v i) = v ++ " = " ++ (show i)
+
+instance ASTPrinter AttributeList where
+    print_struct (AttributeList []) = ""
+    print_struct (AttributeList l) = "(* " ++ (intercalate "," (map print_struct l)) ++ " *)"
+
 instance ASTPrinter Stm where
-    print_struct (Assign e1 e2) = 
-        "assign " ++ print_struct e1 ++ " = " ++ (print_struct e2) ++ ";"
+    print_struct (Assign attr e1 e2) = 
+        "assign " ++ (print_struct attr) ++ print_struct e1 ++ " = " ++ (print_struct e2) ++ ";"
         
     print_struct (Submodule t n fl) = 
         t ++ " " ++ (get_name n) ++ " (" ++ print_struct fl ++ ");"

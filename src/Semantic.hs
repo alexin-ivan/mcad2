@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -26,6 +27,7 @@ import Control.Monad.Writer
 import Control.Monad.State
 
 import Debug.Trace(trace)
+import Data.Function
 
 showtrace x = trace (show x) x
 
@@ -188,6 +190,7 @@ data ModuleType = ModuleType
     {   moduletype_name :: String
     ,   moduletype_istop :: Bool
     ,   moduletype_isprimitive :: Bool
+    ,   moduletype_attributes :: Map String Int
     }
     deriving(Eq,Ord,Show,Read)
 
@@ -195,6 +198,7 @@ default_moduletype = ModuleType
     { moduletype_name = ""
     , moduletype_istop = False
     , moduletype_isprimitive = False
+    , moduletype_attributes = Map.empty
     }
 
 data Module = 
@@ -534,10 +538,18 @@ make_stms ::
     [Tree Module]
 -}
 
-make_stms ports wires instance_name cenv stms ast = do
+mk_attributemap (A.AttributeList attrs) = Map.fromList $ map (\(A.Attribute n i) -> (n,i) ) attrs
+
+
+make_stms ports wires instance_name cenv stms ast all_attrs = do
         submodules <- liftM concat $ mapM (\s -> make_stm s) submodule_stms
         return $ rename submodules
     where
+    
+    findAttrs :: String -> Map String Int
+    findAttrs attr_name = Map.mapKeys fromJust $ Map.filterWithKey (const . (/= Nothing) ) $ Map.mapKeys go all_attrs
+        where
+        go s = stripPrefix (attr_name ++ "#") s
 
     rename subs = evalState (mapM go subs) indexMap
         where
@@ -545,9 +557,14 @@ make_stms ports wires instance_name cenv stms ast = do
         go (Node (Module t pd wd lpr InstanceUnnamed fm) rest) = do
             i <- gets $ \m -> fromJust $ Map.lookup t m
             modify $ Map.update (\x -> Just $ x + 1) t
-            return $ Node (Module t pd wd lpr (InstanceIID (moduletype_name t) i) fm ) rest
+            return $ Node (Module (mknewt t) pd wd lpr (InstanceIID (moduletype_name t) i) fm ) rest
         
         go x  = return x
+
+        mknewt t@(moduletype_attributes -> attrs) = t { moduletype_attributes = newattrs }
+            where
+            name = moduletype_name t
+            newattrs = Map.union attrs (findAttrs name)
 
         indexMap = Map.fromList $ map f subs
             where
@@ -583,13 +600,13 @@ make_stms ports wires instance_name cenv stms ast = do
 
     submodule_stms = filter f stms
         where
-        f (A.Submodule _ _ _) = True
-        f (A.Assign _ _ )     = True
+        f A.Submodule{} = True
+        f A.Assign{}     = True
         f _                   = False
 
     assign_stms = filter f stms
         where
-        f (A.Assign _ _ ) = True
+        f A.Assign{} = True
         f _               = False
 
     defparam_to_param (A.Defparam inst n e) = A.Parameter n e
@@ -610,16 +627,19 @@ make_stms ports wires instance_name cenv stms ast = do
                 True -> Right (var_list,port_name)
                 False -> Left $ "Error in bindings: " ++ (show flist) ++ " ;"
     
-    mk_primitive_mtype name = default_moduletype 
+    mk_primitive_mtype' attrs name = default_moduletype 
         { moduletype_name = name
         , moduletype_isprimitive = True
+        , moduletype_attributes = attrs
         }
     
     make_stm :: A.Stm -> Result [Tree Module]
-    make_stm (A.Assign rvalue lvalue) = do -- Right $ Node (Module [] [] [] Map.empty Nothing Map.empty) []
+    make_stm (A.Assign attr rvalue lvalue) = do -- Right $ Node (Module [] [] [] Map.empty Nothing Map.empty) []
         r <- make_rvalue
         make_lvalue r lvalue
         where
+        mk_primitive_mtype = mk_primitive_mtype' $ mk_attributemap attr
+
         make_rvalue = eval_arg env rvalue
         make_lvalue r (A.E_BitOp (A.BE_Select sel a1 a0)) = do
             s <- eval_arg env sel
@@ -642,6 +662,8 @@ make_stms ports wires instance_name cenv stms ast = do
             l <- eval_arg env u
             ms <- make_alias r l
             return  $ map (\m -> Node m []) ms
+        
+        make_lvalue r u = error $ show u
 
         -- mux
         {-make_select varlistR varlistS varlistD1 varlistD0 =-}
@@ -725,7 +747,7 @@ make_module def_params instance_name flist m ast = do
         ports <- make_ports params port_decls port_defs
         wires <- make_wires params wire_delcs
         formalmap <- expand_flist flist ports
-        let subs' = make_stms ports wires instance_name params stms ast -- :: Result [Tree Module]
+        let subs' = make_stms ports wires instance_name params stms ast local_attrs -- :: Result [Tree Module]
         subs <- case subs' of
             Left s -> Left $ "Error in module `" ++ show (name,instance_name) ++ "`:" ++ s
             Right x -> Right x
@@ -733,7 +755,7 @@ make_module def_params instance_name flist m ast = do
         let my = Module mtype ports wires (LocalParameters $ local_params params) instance_name formalmap
         return $ Node my subs
     where
-    mtype = default_moduletype { moduletype_name = name, moduletype_istop = False }
+    mtype = default_moduletype { moduletype_name = name, moduletype_istop = False, moduletype_attributes = global_attrs }
 
     local_params params = Map.filterWithKey (const . is_self_param ) params
         where
@@ -746,6 +768,17 @@ make_module def_params instance_name flist m ast = do
     name       = A.module_name m
     stms       = A.module_stms m
     self_params = A.module_params m
+    {-attrs_map' = mk_attributemap $ A.module_attrs m-}
+    (global_attrs,local_attrs) = uncurry (on (,) Map.fromList) $ foldl go ([],[]) $ map pred $ A.unAttributeList $ A.module_attrs m
+        where
+        go (g,l) (Left x) = (x:g,l)
+        go (g,l) (Right x) = (g,x:l)
+        pred (A.Attribute k v) = case stripPrefix "all#" k of
+            Nothing -> Left (k,v)
+            Just x  -> Right (x,v)
+            where
+    
+
 
 
 

@@ -32,6 +32,8 @@ import qualified Data.Tree as Tree
 
     "("                         { TParROpen }
     ")"                         { TParRClose }
+    attr_begin                  { TAttrBegin }
+    attr_end                    { TAttrEnd }
     "{"                         { TParFOpen }
     "}"                         { TParFClose }
     "["                         { TParQOpen }
@@ -47,11 +49,11 @@ import qualified Data.Tree as Tree
     "&"                         { TAnd }
     "|"                         { TOr }
     
-    bin_digit			{TBinDigit $$ }
-    hex_digit			{THexDigit $$ }
+    bin_digit                   {TBinDigit $$ }
+    hex_digit                   {THexDigit $$ }
     
-    bin_ix_digit			{TBinIxDigit $$ }
-    hex_ix_digit			{THexIxDigit $$ }
+    bin_ix_digit                {TBinIxDigit $$ }
+    hex_ix_digit                {THexIxDigit $$ }
     
     dec_digit                   {TDecDigit $$ }
     var_id                      {TId $$ }
@@ -84,7 +86,7 @@ ModuleList  :: { [Module] }
 
 Module :: { Module }
     :
-      module var_id "(" VarList ")" ";" ModuleStms endmodule { Module $2 $4 $7 }
+    AttributeList  module var_id "(" VarList ")" ";" ModuleStms endmodule { Module $1 $3 $5 $8 }
 
 -- 0 and any
 VarList :: { [String] }
@@ -116,20 +118,23 @@ PortImplList :: { [PortDecl] }
 PortImpl :: { PortDecl }
     : Direction Range VarListOneOrMore { PortDecl $1 $2 $3 }
 
-
-
 Direction :: { Direction }
     : input         { Input }
     | output        { Output }
     | inout         { Inout }
 
 
-{-
-PortType :: { PortType }
-    : tri       { PortTri }
-    |         { EmptyPortType }
--}
+AttributeList :: { AttributeList }
+    : attr_begin Attributes attr_end { AttributeList $2 }
+    |                                { AttributeList [] }
 
+Attributes :: { [Attribute] }
+    : Attributes "," Attribute          { $3 : $1 }
+    | Attribute                     { [$1] }
+    |                               { [] }
+
+Attribute :: { Attribute }
+    : var_id "=" dec_digit          { Attribute $1 (read $3) }
 
 AnyIxDigit :: { Digit }
     : bin_ix_digit                  { digit_to_int (BinIxDigit $1) }
@@ -183,7 +188,7 @@ Defparam :: {Stm }
     : defparam var_id "." var_id "=" Expr { Defparam $2 $4 $6 }
 
 AssignStmt :: {Stm}
-    : assign Expr "=" Expr           { Assign $2 $4 }
+    : assign AttributeList Expr "=" Expr           { Assign $2 $3 $5 }
 
 Range :: { Range }
      : "[" Expr ":" Expr "]"            {Range $2 $4 }

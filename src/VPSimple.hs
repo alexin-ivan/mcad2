@@ -18,6 +18,11 @@ import Debug.Trace
 import Data.Map(Map)
 
 import Data.Tree
+import System.FilePath
+import Control.Exception
+import Prelude hiding (catch)
+import System.IO.Error hiding(catch)
+import System.FilePath.Windows
 
 
 {- {{{
@@ -351,6 +356,8 @@ mk_token s = case mapM go ts of
          ,(stripPrefix "`include",Include)
          ,(Just,Code . CodeLine)]
 
+    stripSpace s = reverse $ dropWhile (==' ') $ reverse $ dropWhile (==' ') s
+
     stripComment :: String -> String
     stripComment str = 
         let (code,comment) = findComment str
@@ -359,7 +366,7 @@ mk_token s = case mapM go ts of
 
     go (f,f') = case f s of
         Nothing -> Right "Can't find token"
-        Just x  -> Left $ f' $ stripComment x
+        Just x  -> Left $ f' $ stripSpace $ stripComment x
         
 tokenize :: FilePath -> [String] -> [Token]
 tokenize fname ts =  zipWith (\i t ->  Token i fname $ mk_token t ) [0..] ts
@@ -381,6 +388,7 @@ eval_token noskip p@(ParserInfo ( t@(Token lNum fName tt)  :ts) defs code ifs _ 
                 Include s -> include_file next_p s
                 Ifdef s -> nextIf  (s `elem` defs) withIf
                 Ifndef s -> nextIf (not (s `elem` defs)) withIf
+                -- Ifndef s -> nextIf (not (s `elem` defs)) withIf
                 Endif | ifs == [] -> error $ "In file " ++ (show fName) ++ "at line: " ++ (show lNum)  ++ " Error: Ifdef/Ifndef missing" ++ (show p)
                       | otherwise -> next withCloseIf
                 Code (CodeLine s) -> next (withSourceLine s)
@@ -409,16 +417,17 @@ eval_token noskip p@(ParserInfo ( t@(Token lNum fName tt)  :ts) defs code ifs _ 
     next_p = p { pi_tokens = ts }
 
 include_file p filename = do
-    tokens <- parseFile $ read filename
+    tokens <- parseFile reader (read filename)
     eval_token True $ new_p (begin_file : (tokens ++ [end_file]))
     where
     begin_file = Token (-1) filename $ Code $ BeginFile filename
     end_file = Token (-1) filename $ Code $ EndFile filename
+    reader = pi_readFile p
 
     new_p newts = let ts = pi_tokens p
              in p { pi_tokens = newts ++ ts}
 
-parseFile fname = pure ((tokenize fname) . lines )  <*> readFile fname
+parseFile (FileRead fread) fname = pure ((tokenize fname) . lines )  <*> fread fname
 
 findComment str =(\(x,y) -> ((concat x),(concat y)) ) $ span (not . isComment)  (groupBy gf str)
     where
@@ -443,11 +452,28 @@ translate line column = do
         gf '/' '/' = True
         gf _   _   = False
 
+
+fileReader basefile filename = do
+    fcont <- (\c -> catch readWithBaseDir c) $ \e ->
+        if not $ isDoesNotExistError e then error $ show e
+        else readWithCurrentDir
+    return fcont
+    where
+    readWithCurrentDir = readFile filename
+    
+    readWithBaseDir :: IO String
+    readWithBaseDir = do
+        let fname = (fst $ splitFileName basefile) </> (snd $ splitFileName filename)
+        readFile fname
+    
+    
+        
+
 parse :: FilePath -> IO String
 parse fname = do
 --    ts <- parseFile fname
     let defs = []
-    let p = ParserInfo [Token 0 fname (Include (show fname) ) ] defs [] [] (FileRead readFile) [] :: ParserInfo
+    let p = ParserInfo [Token 0 fname (Include (show fname) ) ] defs [] [] (FileRead $ fileReader $ fname) [] :: ParserInfo
     newp@(ParserInfo _ _ code _ _ _) <- eval_token True p 
     return $ unlines $ map show_line $ reverse code
 --    return $ show newp

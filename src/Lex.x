@@ -26,7 +26,7 @@ $quote = "
 
 @filepath=@string
 
-@extra_var_id = \\[$alpha$digit\_\~\[\]\|]*
+@extra_var_id = \\[$alpha$digit\_\~\[\]\|\#]*
 
 tokens :-
     $white+                     ;
@@ -41,8 +41,10 @@ tokens :-
     "inout"                     {token_simple TInout }
     
     "tri"                       {token_simple TTri }
-    "wire"						{token_simple TWire }
+    "wire"                      {token_simple TWire }
 
+    "(*"                        {token_simple TAttrBegin }
+    "*)"                        {token_simple TAttrEnd }
     "("                         {token_simple TParROpen }
     ")"                         {token_simple TParRClose }
     "{"                         {token_simple TParFOpen }

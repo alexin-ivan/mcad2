@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -33,7 +34,11 @@ import qualified Data.Tree as Tree
 import Control.Applicative
 import Control.Monad.State
 
+import Data.Function
+
 import Debug.Trace
+
+empty_edge = Edge []
 
 build :: AST -> Graph
 build ast = build_tree (addLocalEdges top (Graph (Map.union edges top_consts) nodes)) ast
@@ -46,16 +51,22 @@ build ast = build_tree (addLocalEdges top (Graph (Map.union edges top_consts) no
     top_consts :: EdgeMap
     top_consts = Map.fromList $ map mk_edge [S.L,S.H,S.Z,S.X]
         where
-        mk_edge b = ([Wire (CValue b) WireSimple],[])
+        mk_edge b = ([Wire (CValue b) WireSimple],empty_edge)
     
+    edges :: EdgeMap
     edges = Map.fromList $ map go flist
         where
-        go (value,port) = ([eid],[port])
+        go (value,port) = ([eid],Edge [port])
             where
             eid = Wire value WireSimple
 
 
-type Edge = [Port]
+data Edge = Edge
+    {   edge_cps :: [Port]
+--    ,   edge_fake_cps :: [Port]
+    }
+    deriving(Eq,Ord,Show,Read)
+
 type EdgeMap = Map [Wire] Edge
 newtype NodeFormalList = NodeFormalList { unNodeFormalList :: Map Wire Port }
     deriving(Eq,Ord,Show,Read)
@@ -77,6 +88,9 @@ data Graph = Graph
 instance S.ASTShow Graph where
     ast_show (Graph edges ns) = S.ast_show edges
 
+instance S.ASTShow Edge where
+    ast_show Edge{ edge_cps = cps } = 
+        "\n\tReal: " ++ S.ast_show cps -- ++ "\n\tFake: " ++ S.ast_show fcps
 
 enter_context_edges ::  FormalMap -> EdgeMap -> EdgeMap
 enter_context_edges (FormalMap flist) edges = Map.mapKeys go edges
@@ -94,38 +108,63 @@ enter_context_edges (FormalMap flist) edges = Map.mapKeys go edges
 invert_map flist = Map.fromList $ map (\(x,y) -> (y,x) ) $ Map.toList flist
 
 leave_context_edges ::  FormalMap -> EdgeMap -> EdgeMap
-leave_context_edges (FormalMap flist) edges = Map.mapKeys go edges
+leave_context_edges (FormalMap flist) edges = Map.fromList $ map go $ Map.toList edges
     where
-    flist' :: [Arg]
-    flist' = map port_arg $ Map.elems flist
-    go eid = case value of
-            SValue arg | arg `elem` flist' -> tail $ tr eid
-                         | otherwise -> eid
-            _ -> eid
-        where 
+    flist' :: [(Arg,Port)]
+    flist' = map (\p@(port_arg -> arg) -> (arg,p)) $ Map.elems flist
+
+    go record@(eid,edge) = case value of
+            SValue arg -> case List.lookup arg flist' of
+                    Nothing -> record
+                    Just p  -> (tail eid,addFakePortInEdge edge p)
+            -- SValue arg | arg `elem` flist' -> (tail eid,addFakePortInEdge e fakeport)
+            --            | otherwise -> eid
+            _ -> record
+        where
         value = wire_arg $ head $ eid
-        tr = id
 --        tr x = trace ("Lookup: " ++ (show value) ++ "in: " ++ (show flist) ) x
 --        tr e = trace ("Leave: " ++ (show e)) e
 
 withEdges f g = g {graph_edges = new_edges }
     where new_edges = f $ graph_edges g
 
+
 enter_context flist g = withEdges (enter_context_edges flist) g
 leave_context flist g = withEdges (leave_context_edges flist) g
+
+addPortInEdge,addFakePortInEdge :: Edge -> Port -> Edge
+addPortInEdge e@(edge_cps -> ps) p = e { edge_cps = p : ps }
+-- addFakePortInEdge e@(edge_fake_cps -> ps) p = e { edge_fake_cps = p : ps }
+addFakePortInEdge e p = e
+
 
 addLocalEdges m g = withEdges f g
     where
     wires = module_wiredecl m
     f edges = Map.union edges local_edges
-    local_edges = Map.fromList $ map (\w -> ([w],[])) wires
+    local_edges :: EdgeMap
+    local_edges = Map.fromList $ map (\w -> ([w],empty_edge)) wires
+
+edge_union :: Edge -> Edge -> Edge
+edge_union e1 e2 = Edge (appl edge_cps) -- (appl edge_fake_cps)
+    where appl f = on List.union f e1 e2
 
 graph_union :: [Graph] -> Graph
 graph_union gs = Graph new_edges new_nodes
     where
     new_nodes = concat $ map graph_nodes gs
     new_edges = Map.unionsWith uf $ map graph_edges gs
-    uf a b = List.union a b
+    uf a b = edge_union a b
+
+getPortFromEdges :: EdgeMap -> Port -> Maybe [Wire]
+getPortFromEdges edges p = case Map.toList $ Map.filterWithKey go edges of
+        [] -> Nothing
+        [x] -> Just $ fst x
+        xs -> error "Assertion: HGraphSemantic.hs:159"
+    where
+    go :: [Wire] -> Edge -> Bool
+    go addr (Edge cps) = p `elem` cps
+--    go addr (Edge cps fps) = on (||) (p `elem`) cps fps
 
 module2mode :: EdgeMap -> Module -> Node
 module2mode edges m = node 
@@ -136,10 +175,17 @@ module2mode edges m = node
         mid = module_id m
         lp = module_params m
         t = module_type m
+
+        fl' = Map.fromList $ map go $ Map.toList flist
+            where
+            go (v,p) = case getPortFromEdges edges p of
+                        Nothing -> error $ "Can't find port " ++ show p ++ " in " ++ (show edges)
+                        Just x -> (last x,p)
+
         fl = Map.fromList $ concatMap local_edges $ Map.toList edges
         local_edges :: ([Wire],Edge) -> [(Wire,Port)]
-        local_edges (addr,_) = case Map.lookup k flist of
-            Nothing -> []
+        local_edges (addr,e) = case Map.lookup k flist of
+            Nothing -> const [] ((S.ast_show addr)) 
             Just x  -> [(wire,x)]
             where
             wire = last addr
@@ -174,8 +220,6 @@ build_tree g (Tree.Node m []) =
             wire = last addr
             k = wire_arg $ head addr
 -}
-
-        
      
     flist = unFormalMap $ module_flist m
     new_edges :: EdgeMap
@@ -184,7 +228,7 @@ build_tree g (Tree.Node m []) =
         go :: [Wire] -> Edge -> Edge
         go wire e = case Map.lookup value flist of
             Nothing -> e
-            Just x  -> x : e
+            Just x  -> addPortInEdge e x
             where
             value = wire_arg $ head wire
 
@@ -569,6 +613,7 @@ do_test_hg ast = case go of
         asts <- build_gtrees ast
         let graphs = map build asts
         return $ unlines $ map S.ast_show graphs
+        {-return $ unlines $ map show graphs-}
 
 
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 --
@@ -76,10 +77,10 @@ instance ToVerilog S.ModuleType where
 instance ToVerilog Node where
     to_verilog node | ntype == "alias" = print_alias
                     | ntype == "mux"   = print_mux
-                    | otherwise = printf  "%s \\%s %s;\n%s\n" ntype nid flist props
+                    | otherwise = printf  "%s %s \\%s %s;\n%s\n" attrs ntype nid flist props
         where
         print_mux :: String
-        print_mux = printf "assign %s = %s ? %s : %s ;\n" varL varS varD1 varD0
+        print_mux = printf "assign %s %s = %s ? %s : %s ;\n" attrs varL varS varD1 varD0
             where
             varL =  findBy "o"
             varS =  findBy "sel"
@@ -87,14 +88,14 @@ instance ToVerilog Node where
             varD1 = findBy "d1"
             findBy :: String -> String
             findBy pname = to_verilog $ S3.wire_arg $ case find (pred pname) flist' of
-                Nothing -> error $ printf "Assertion: can't find wire for port %s in: %s " (show pname) (show flist')
+                Nothing -> error $ printf "Assertion: can't find wire for port %s in %s: %s " (show pname) (show nid) (show flist')
                 Just x -> fst x
             
             pred pname (_,S3.Port (S3.Arg _ (S3.ID n Nothing)) d) = pname == n
             pred _ _ = False
             flist' =  Map.toList $ unNodeFormalList $ node_flist node
 
-        print_alias = printf "assign %s = %s ;\n" varL varR
+        print_alias = printf "assign %s %s = %s ;\n" attrs varL varR
             where
             varL = to_verilog $ S3.wire_arg $ findByPort "o"
             varR = to_verilog $ S3.wire_arg $ findByPort "i"
@@ -108,6 +109,9 @@ instance ToVerilog Node where
             flist' =  Map.toList $ unNodeFormalList $ node_flist node
 
         removeTopNameFromNodeid = reverse . tail . reverse
+        
+        attrs :: String
+        attrs = AST.print_struct $ AST.AttributeList $ map (uncurry AST.Attribute) $ Map.toList $ S.moduletype_attributes $ node_type node
 
         nid   = to_verilog $ removeTopNameFromNodeid $ node_id node
         ntype = to_verilog $ node_type node
@@ -153,7 +157,7 @@ instance ToVerilog Graph where
         portdecls = unlines $ map show_port_decl ports
 
         nodes = concat $ map to_verilog $ filter (not . pred_isBlackBox) $ filter pred_isPrimitive $ graph_nodes graph
-        wires = to_verilog $ Map.filterWithKey (\k e -> not $ is_port' k e) $ graph_edges graph
+        wires = to_verilog $ Map.filterWithKey (\k (edge_cps -> e) -> not $ is_port' k e) $ graph_edges graph
             where
             is_port' _ e = any (`elem` ports) e
 

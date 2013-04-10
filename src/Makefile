@@ -58,6 +58,10 @@ vptest: $(DEBUG_DIR)/vp.exe
 	cd $(DEBUG_DIR); $(MAKE) -e EXE_NAME=$(DEBUG_DIR)/vp.exe
 
 #Syntax Test {{{
+
+syntax:	$(DEBUG_DIR)/TestSyntax.exe
+	echo "type make test_syntax"
+
 test_syntax: $(DEBUG_DIR)/TestSyntax.exe
 	cd $(DEBUG_DIR); $(MAKE) -e EXE_NAME=TestSyntax.exe
 

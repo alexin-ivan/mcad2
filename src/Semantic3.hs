@@ -135,9 +135,6 @@ portdecl_to_port context (S.PortDecl d (S.VariableT vname vindex') ) = Port arg 
 arg_to_value _ (S.ArgConst b) = CValue b
 arg_to_value context (S.ArgVar n i) = SValue arg
     where
-    index = case i of
-        Nothing -> 0
-        Just x  -> x
     lid = ID n i
     arg = Arg context lid
 
@@ -148,13 +145,20 @@ convert_flist currentContext (S.FormalMap flist) = FormalMap $ Map.fromList $ ma
     conv_arg  = arg_to_value top_context
     go (arg,port) = (conv_arg arg,conv_port port)
 
-convert_module top_context (S.Module t pd wd lp mid flist) =
-        Module t g_pd g_wd lp currentContext g_flist
+convert_module top_context (S.Module t pd wd lp mid flist) = traceIf rmodule
     where
+
+    rmodule = Module t g_pd g_wd lp currentContext g_flist
+
     currentContext = mid : top_context
     g_pd = concatMap (convert_portdecl currentContext) pd
     g_wd = concatMap (convert_wiredecl currentContext) wd
     g_flist = convert_flist currentContext flist
+
+    traceIf = if False then trace (show rmodule) else id
+        where
+        isM (S.InstanceIID "mux" _) = True
+        isM _ = False
 
 convert_top ast = conv_top $ convert_tree [] ast
     where

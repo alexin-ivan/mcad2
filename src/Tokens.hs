@@ -29,7 +29,7 @@ data TokenType =
     TEqual |
     TQuest |
 
-	TTilda |
+    TTilda |
     TAnd |
     TOr |
 
@@ -44,9 +44,12 @@ data TokenType =
     TId String |
     TString String |
 
+    TAttrBegin |
+    TAttrEnd |
+
     TLexError String|
     TEOF
-
+    
 
     deriving(Eq,Ord,Show,Read)
 
